@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_wombling.R
 \name{bayes_cwomb}
 \alias{bayes_cwomb}
-\title{Bayesian Wombling on Curves}
+\title{Curvilinear Bayesian Wombling}
 \usage{
 bayes_cwomb(
   coords = NULL,
@@ -23,7 +23,7 @@ bayes_cwomb(
 
 \item{chain}{the posterior samples from the MCMC fit}
 
-\item{cov.type}{coavriance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
+\item{cov.type}{covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
 
 \item{niter}{number of iterations for the chain}
 
@@ -44,7 +44,3 @@ bayes_cwomb(
 \description{
 performs Bayesian wombling on curves within the spatial surface.
 }
-\examples{
-spWombling
-}
-\keyword{spWombling}

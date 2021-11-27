@@ -1,10 +1,10 @@
-#' Bayesian Wombling on Curves
+#' Curvilinear Bayesian Wombling
 #'
 #' performs Bayesian wombling on curves within the spatial surface.
 #'
 #' @param coords coordinates for observed process (order \eqn{L} x \eqn{2})
 #' @param chain the posterior samples from the MCMC fit
-#' @param cov.type coavriance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})
+#' @param cov.type covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})
 #' @param niter number of iterations for the chain
 #' @param nburn number of burn-in samples
 #' @param nbatch number of batches
@@ -13,17 +13,27 @@
 #' @param approx if TRUE curve will be approximated
 #' @param verbose if TRUE will print status
 #' @param rule.len specifies accuracy for quadrature
-#' @keywords spWombling
+#' @import stats
+#' @importFrom coda as.mcmc
+#' @importFrom coda is.mcmc
+#' @importFrom coda HPDinterval
+#' @importFrom MASS mvrnorm
+#' @importFrom Matrix Matrix
+#' @keywords 
 #' @export
-#' @examples spWombling
+#' @examples
 
 ######################################################################
 ### Bayesian Wombling for Curves effected in parallel for segments ###
 ######################################################################
+# if(c("coda") %in% rownames(installed.packages()) == FALSE) {install.packages("coda")}
+# if(c("Matrix") %in% rownames(installed.packages()) == FALSE) {install.packages("Matrix")}
+# ifelse("coda" %in% (.packages()),"## Required package:: coda already attached",require(coda))
+# ifelse("Matrix" %in% (.packages()),"## Required package:: Matrix already attached",require(Matrix))
 
 bayes_cwomb <- function(coords = NULL,
                         chain = NULL,
-                        cov.type=c("gaussian","matern1","matern2"),
+                        cov.type = c("gaussian","matern1","matern2"),
                         niter = NULL,
                         nburn = NULL,
                         nbatch = NULL,
@@ -32,7 +42,7 @@ bayes_cwomb <- function(coords = NULL,
                         approx = NULL,
                         verbose = T,
                         rule.len = 10){
-  len <- rule.len
+  len <- rule.len; Delta <- Matrix(as.matrix(dist(coords)))
   # quadrature rule
   rule.uv <-  seq(0,1,length.out=len)
   rule.mv <- expand.grid(rule.uv,rule.uv)
@@ -46,12 +56,12 @@ bayes_cwomb <- function(coords = NULL,
         
         # calculation of the wombling measure
         ntimes <- (niter-nburn)
-        womb_measure1 <- matrix(NA,nr=(nrow(curve)-1),ncol=ntimes)
+        womb_measure1 <- matrix(NA,nrow=(nrow(curve)-1),ncol=ntimes)
         for(i.mcmc in 1:ntimes){
           # MCMC parameters
-          sig2.est <- mc_sp$parameters$post_sigma2[(nburn+i.mcmc)]
-          phis.est <- mc_sp$parameters$post_phis[(nburn+i.mcmc)]
-          z.est <- mc_sp$latent.effect$post_z[(nburn+i.mcmc),]
+          sig2.est <- chain$parameters$post_sigma2[(nburn+i.mcmc)]
+          phis.est <- chain$parameters$post_phis[(nburn+i.mcmc)]
+          z.est <- chain$latent.effect$post_z[(nburn+i.mcmc),]
           Sig.Z.grad.est <- (1+sqrt(5)*phis.est*Delta+5*phis.est^2*Delta^2/3)*exp(-sqrt(5)*phis.est*Delta)+1e-10*diag(nrow(Delta))
           s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
           
@@ -64,26 +74,26 @@ bayes_cwomb <- function(coords = NULL,
             # Univariate Quadrature: Area 
             gamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.m1(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.m1(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
               sum(grad.li[-len])*(tval[i]/len)
             }))
             tgamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.m1(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.m1(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
             }))
             
             ###################################################
             # Line-Integral Process: Variance-Covariance term #
             ###################################################
             # Bivariate Quadrature: Volume
-            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.m1(t=x,u=u))[-len^2])*tval[i]^2/len^2
-            k.gamma <- matrix(k.g.11,nr=1,nc=1,byrow=T)
+            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.m1(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
+            k.gamma <- matrix(k.g.11,nrow=1,ncol=1,byrow=T)
             
             tmp <- t(crossprod(tgamma.cov,s.grad.in))
             mean.womb <- crossprod(tmp,z.est)
             var.womb <-  k.gamma-crossprod(tmp,gamma.cov)
             
-            wm <- MASS::mvrnorm(1,mean.womb,sig2.est*var.womb)
+            wm <- mvrnorm(1,mean.womb,sig2.est*var.womb)
             
             womb_measure1[i,i.mcmc] <- wm[1]
           }
@@ -99,7 +109,7 @@ bayes_cwomb <- function(coords = NULL,
           else return(0)
         })
         
-        womb.measure.inf <- matrix(c(sum(w1.est[,"median"])/sum(tval),median(rowSums(w1.batch)/sum(tval)), HPDinterval(as.mcmc(rowSums(w1.batch)/sum(tval)))),nr=1)
+        womb.measure.inf <- matrix(c(sum(w1.est[,"median"])/sum(tval),median(rowSums(w1.batch)/sum(tval)), HPDinterval(as.mcmc(rowSums(w1.batch)/sum(tval)))),nrow=1)
         colnames(womb.measure.inf) <- c("line-segment-level","batch-median","batch-lhpd","batch-uhpd")
         rownames(womb.measure.inf) <- c("Gamma1(C)")
         return(list(tval=tval,
@@ -119,9 +129,10 @@ bayes_cwomb <- function(coords = NULL,
       gradient_est <- spatial_gradient(coords=coords,
                                        grid.points = curve,
                                        samples = samples,
-                                       post_mcmc = chain,
+                                       chain = chain,
                                        cov.type = cov.type,
-                                       ncores = 5,
+                                       niter=niter,
+                                       nburn=nburn,
                                        nbatch = nbatch,
                                        return.mcmc = T)
       grad.s1.curve <- gradient_est$grad.s1.mcmc
@@ -146,9 +157,9 @@ bayes_cwomb <- function(coords = NULL,
       })
       
       w1.c <- c(sum(estval.inf[,1]*tval)/sum(tval),median(apply(estval,1,function(x) sum(x*tval)/sum(tval))), HPDinterval(as.mcmc(apply(estval,1,function(x) sum(x*tval)/sum(tval)))))
-      womb.measure.inf <- matrix(w1.c, nr=1)
+      womb.measure.inf <- matrix(w1.c, nrow=1)
       colnames(womb.measure.inf) <- c("line-segment-level","batch-median","batch-lhpd","batch-uhpd")
-      rownames(womb.measure.inf) <- c("Gamma1(C)","Gamma2(C)")
+      rownames(womb.measure.inf) <- c("Gamma1(C)")
       return(list(tval=tval,
                   uval=uval,
                   womb1.mcmc = estval,
@@ -161,12 +172,12 @@ bayes_cwomb <- function(coords = NULL,
         
         # calculation of the wombling measure
         ntimes <- (niter-nburn)
-        womb_measure1 <- womb_measure2 <- matrix(NA,nr=(nrow(curve)-1),ncol=ntimes)
+        womb_measure1 <- womb_measure2 <- matrix(NA,nrow=(nrow(curve)-1),ncol=ntimes)
         for(i.mcmc in 1:ntimes){
           # MCMC parameters
-          sig2.est <- mc_sp$parameters$post_sigma2[(nburn+i.mcmc)]
-          phis.est <- mc_sp$parameters$post_phis[(nburn+i.mcmc)]
-          z.est <- mc_sp$latent.effect$post_z[(nburn+i.mcmc),]
+          sig2.est <- chain$parameters$post_sigma2[(nburn+i.mcmc)]
+          phis.est <- chain$parameters$post_phis[(nburn+i.mcmc)]
+          z.est <- chain$latent.effect$post_z[(nburn+i.mcmc),]
           Sig.Z.grad.est <- (1+sqrt(5)*phis.est*Delta+5*phis.est^2*Delta^2/3)*exp(-sqrt(5)*phis.est*Delta)+1e-10*diag(nrow(Delta))
           s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
           
@@ -179,15 +190,15 @@ bayes_cwomb <- function(coords = NULL,
             # Univariate Quadrature: Area 
             gamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.m2(x,u=u,s0=s0,sj=sj))
-              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.2.m2(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.m2(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
+              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.2.m2(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
               c(sum(grad.li[-len])*(tval[i]/len),
                 sum(curv.li[-len])*(tval[i]/len))
             }))
             tgamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.m2(x,u=u,s0=s0,sj=sj))
-              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.2.m2(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.m2(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
+              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.2.m2(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
               c(sum(grad.li[-len])*(tval[i]/len),
                 sum(curv.li[-len])*(tval[i]/len))
             }))
@@ -196,17 +207,17 @@ bayes_cwomb <- function(coords = NULL,
             # Line-Integral Process: Variance-Covariance term #
             ###################################################
             # Bivariate Quadrature: Volume
-            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.m2(t=x,u=u))[-len^2])*tval[i]^2/len^2
-            k.g.12 <- sum(apply(rule.mv*tval[i],1,function(x) K.12.m2(t=x,u=u))[-len^2])*tval[i]^2/len^2
-            k.g.22 <- sum(apply(rule.mv*tval[i],1,function(x) K.22.m2(t=x,u=u))[-len^2])*tval[i]^2/len^2
+            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.m2(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
+            k.g.12 <- sum(apply(rule.mv*tval[i],1,function(x) K.12.m2(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
+            k.g.22 <- sum(apply(rule.mv*tval[i],1,function(x) K.22.m2(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
             k.g.21 <- -k.g.12
-            k.gamma <- matrix(c(k.g.11,k.g.12,k.g.21,k.g.22),nr=2,nc=2,byrow=T)
+            k.gamma <- matrix(c(k.g.11,k.g.12,k.g.21,k.g.22),nrow=2,ncol=2,byrow=T)
             
             tmp <- t(crossprod(tgamma.cov,s.grad.in))
             mean.womb <- crossprod(tmp,z.est)
             var.womb <-  k.gamma-crossprod(tmp,gamma.cov)
             
-            wm <- MASS::mvrnorm(1,mean.womb,sig2.est*var.womb)
+            wm <- mvrnorm(1,mean.womb,sig2.est*var.womb)
             
             womb_measure1[i,i.mcmc] <- wm[1]
             womb_measure2[i,i.mcmc] <- wm[2]
@@ -253,9 +264,10 @@ bayes_cwomb <- function(coords = NULL,
       gradient_est <- spatial_gradient(coords=coords,
                                        grid.points = curve,
                                        samples = samples,
-                                       post_mcmc = chain,
+                                       chain = chain,
                                        cov.type = cov.type,
-                                       ncores = 5,
+                                       niter=niter,
+                                       nburn=nburn,
                                        nbatch = nbatch,
                                        return.mcmc = T)
       grad.s1.curve <- gradient_est$grad.s1.mcmc
@@ -313,12 +325,12 @@ bayes_cwomb <- function(coords = NULL,
         
         # calculation of the wombling measure
         ntimes <- (niter-nburn)
-        womb_measure1 <- womb_measure2 <- matrix(NA,nr=(nrow(curve)-1),ncol=ntimes)
+        womb_measure1 <- womb_measure2 <- matrix(NA,nrow=(nrow(curve)-1),ncol=ntimes)
         for(i.mcmc in 1:ntimes){
           # MCMC parameters
-          sig2.est <- mc_sp$parameters$post_sigma2[(nburn+i.mcmc)]
-          phis.est <- mc_sp$parameters$post_phis[(nburn+i.mcmc)]
-          z.est <- mc_sp$latent.effect$post_z[(nburn+i.mcmc),]
+          sig2.est <- chain$parameters$post_sigma2[(nburn+i.mcmc)]
+          phis.est <- chain$parameters$post_phis[(nburn+i.mcmc)]
+          z.est <- chain$latent.effect$post_z[(nburn+i.mcmc),]
           Sig.Z.grad.est <- (1+sqrt(5)*phis.est*Delta+5*phis.est^2*Delta^2/3)*exp(-sqrt(5)*phis.est*Delta)+1e-10*diag(nrow(Delta))
           s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
           
@@ -331,15 +343,15 @@ bayes_cwomb <- function(coords = NULL,
             # Univariate Quadrature: Area 
             gamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.g(x,u=u,s0=s0,sj=sj))
-              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.2.g(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.1.g(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
+              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.t.2.g(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
               c(sum(grad.li[-len])*(tval[i]/len),
                 sum(curv.li[-len])*(tval[i]/len))
             }))
             tgamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
-              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.g(x,u=u,s0=s0,sj=sj))
-              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.2.g(x,u=u,s0=s0,sj=sj))
+              grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.g(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
+              curv.li <- sapply(rule.uv*tval[i], function(x) Gamma.2.g(x,u=u,s0=s0,sj=sj,phis.est=phis.est))
               c(sum(grad.li[-len])*(tval[i]/len),
                 sum(curv.li[-len])*(tval[i]/len))
             }))
@@ -348,17 +360,17 @@ bayes_cwomb <- function(coords = NULL,
             # Line-Integral Process: Variance-Covariance term #
             ###################################################
             # Bivariate Quadrature: Volume
-            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.g(t=x,u=u))[-len^2])*tval[i]^2/len^2
-            k.g.12 <- sum(apply(rule.mv*tval[i],1,function(x) K.12.g(t=x,u=u))[-len^2])*tval[i]^2/len^2
-            k.g.22 <- sum(apply(rule.mv*tval[i],1,function(x) K.22.g(t=x,u=u))[-len^2])*tval[i]^2/len^2
+            k.g.11 <- sum(apply(rule.mv*tval[i],1,function(x) -K.11.g(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
+            k.g.12 <- sum(apply(rule.mv*tval[i],1,function(x) K.12.g(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
+            k.g.22 <- sum(apply(rule.mv*tval[i],1,function(x) K.22.g(t=x,u=u,phis.est=phis.est))[-len^2])*tval[i]^2/len^2
             k.g.21 <- -k.g.12
-            k.gamma <- matrix(c(k.g.11,k.g.12,k.g.21,k.g.22),nr=2,nc=2,byrow=T)
+            k.gamma <- matrix(c(k.g.11,k.g.12,k.g.21,k.g.22),nrow=2,ncol=2,byrow=T)
             
             tmp <- t(crossprod(tgamma.cov,s.grad.in))
             mean.womb <- crossprod(tmp,z.est)
             var.womb <-  k.gamma-crossprod(tmp,gamma.cov)
             
-            wm <- MASS::mvrnorm(1,mean.womb,sig2.est*var.womb)
+            wm <- mvrnorm(1,mean.womb,sig2.est*var.womb)
             
             womb_measure1[i,i.mcmc] <- wm[1]
             womb_measure2[i,i.mcmc] <- wm[2]
@@ -405,9 +417,10 @@ bayes_cwomb <- function(coords = NULL,
       gradient_est <- spatial_gradient(coords=coords,
                                        grid.points = curve,
                                        samples = samples,
-                                       post_mcmc = chain,
+                                       chain = chain,
                                        cov.type = cov.type,
-                                       ncores = 5,
+                                       niter=niter,
+                                       nburn=nburn,
                                        nbatch = nbatch,
                                        return.mcmc = T)
       grad.s1.curve <- gradient_est$grad.s1.mcmc
@@ -467,7 +480,7 @@ bayes_cwomb <- function(coords = NULL,
 ####################################
 # Covariance - Terms:: Gaussian    # 
 ####################################
-Gamma.t.1.g <- function(t,u,s0,sj){
+Gamma.t.1.g <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- -t*u+(sj-s0)
   
@@ -477,7 +490,7 @@ Gamma.t.1.g <- function(t,u,s0,sj){
   sum(t.0*exp(-t.1)*delta.j.t*u.perp)
 }
 
-Gamma.t.2.g <- function(t,u,s0,sj){
+Gamma.t.2.g <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- -t*u+(sj-s0)
   
@@ -490,7 +503,7 @@ Gamma.t.2.g <- function(t,u,s0,sj){
   k12 <- -2*phis.est*t.0*exp(-t.1)*delta.j.t[1]*delta.j.t[2]
   (k11*u.perp[1]^2+2*k12*u.perp[1]*u.perp[2]+k22*u.perp[2]^2)
 }
-Gamma.1.g <- function(t,u,s0,sj){
+Gamma.1.g <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- t*u+(s0-sj)
   
@@ -500,7 +513,7 @@ Gamma.1.g <- function(t,u,s0,sj){
   sum(t.0*exp(-t.1)*delta.j.t*u.perp)
 }
 
-Gamma.2.g <- function(t,u,s0,sj){
+Gamma.2.g <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- t*u+(s0-sj)
   
@@ -515,7 +528,7 @@ Gamma.2.g <- function(t,u,s0,sj){
 }
 
 # Covariance terms
-K.11.g <- function(t,u){
+K.11.g <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.t2.t1 <- (t[2]-t[1])*u
   
@@ -529,7 +542,7 @@ K.11.g <- function(t,u){
   (k11*u.perp[1]^2+2*k12*u.perp[1]*u.perp[2]+k22*u.perp[2]^2)
 }
 
-K.12.g <- function(t,u){
+K.12.g <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   c.u <- c(u.perp[1]^2,2*u.perp[1]*u.perp[2],u.perp[2]^2)
   delta.t2.t1 <- (t[2]-t[1])*u; norm.delta <- sqrt(sum((delta.t2.t1)^2))
@@ -541,12 +554,12 @@ K.12.g <- function(t,u){
     k122 <- 4*phis.est^2*exp(-t.1)*(1-2*phis.est*delta.t2.t1[2]^2)*delta.t2.t1[1]
     k211 <- k112; k212 <- k122
     k222 <- 4*phis.est^2*exp(-t.1)*(3-2*phis.est*delta.t2.t1[2]^2)*delta.t2.t1[2]
-    nabla3.K <- matrix(c(k111,k112,k122,k211,k212,k222), nr=2,nc=3,byrow=T)
+    nabla3.K <- matrix(c(k111,k112,k122,k211,k212,k222), nrow=2,ncol=3,byrow=T)
     crossprod(t(crossprod(u.perp,nabla3.K)),c.u)
   }
 }
 
-K.22.g <- function(t,u){
+K.22.g <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   c.u <- c(u.perp[1]^2,2*u.perp[1]*u.perp[2],u.perp[2]^2)
   delta.t2.t1 <- (t[2]-t[1])*u; norm.delta <- sqrt(sum((delta.t2.t1)^2))
@@ -560,13 +573,13 @@ K.22.g <- function(t,u){
     k1111 <- 4*phis.est^2*exp(-t.1)*(3-12*phis.est*delta.t2.t1[1]^2+4*phis.est^2*delta.t2.t1[1]^4)
     k1212 <- 4*phis.est^2*exp(-t.1)*(1-2*delta.t2.t1[1]^2)*(1-2*delta.t2.t1[2]^2)
     k2222 <- 4*phis.est^2*exp(-t.1)*(3-12*phis.est*delta.t2.t1[2]^2+4*phis.est^2*delta.t2.t1[2]^4)
-    k1112 <- -8*phis.est^3*exp(-t.1)*(3-2*phis.est*delta.t2.t1[1]^2)delta.t2.t1[1]*delta.t2.t1[2]
+    k1112 <- -8*phis.est^3*exp(-t.1)*(3-2*phis.est*delta.t2.t1[1]^2)*delta.t2.t1[1]*delta.t2.t1[2]
     k1122 <- k1211 <- k2211 <- k1212
-    k1222 <- -8*phis.est^3*exp(-t.1)*(3-2*phis.est*delta.t2.t1[2]^2)delta.t2.t1[2]*delta.t2.t1[1]
+    k1222 <- -8*phis.est^3*exp(-t.1)*(3-2*phis.est*delta.t2.t1[2]^2)*delta.t2.t1[2]*delta.t2.t1[1]
     k2212 <- k1222
     nabla4.K <- matrix(c(k1111,k1112,k1122,
                          k1211,k1212,k1222,
-                         k2211,k2212,k2222), nr=3,nc=3,byrow=T)
+                         k2211,k2212,k2222), nrow=3,ncol=3,byrow=T)
     return(crossprod(t(crossprod(c.u,nabla4.K)),c.u))
   }
 }
@@ -575,7 +588,7 @@ K.22.g <- function(t,u){
 ####################################
 # Covariance - Terms:: Matern(3/2) # 
 ####################################
-Gamma.t.1.g <- function(t,u,s0,sj){
+Gamma.t.1.m1 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- -t*u+(sj-s0)
   
@@ -584,7 +597,7 @@ Gamma.t.1.g <- function(t,u,s0,sj){
   t.1 <- sqrt(3)*phis.est*sqrt(sum((delta.j.t)^2))
   sum(t.0*exp(-t.1)*delta.j.t*u.perp)
 }
-Gamma.1.g <- function(t,u,s0,sj){
+Gamma.1.m1 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- t*u+(s0-sj)
   
@@ -594,7 +607,7 @@ Gamma.1.g <- function(t,u,s0,sj){
   sum(t.0*exp(-t.1)*delta.j.t*u.perp)
 }
 # Covariance terms
-K.11.g <- function(t,u){
+K.11.m1 <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.t2.t1 <- (t[2]-t[1])*u
   
@@ -613,7 +626,7 @@ K.11.g <- function(t,u){
 # Covariance - Terms:: Matern(5/2) # 
 ####################################
 # Cross-covariance terms
-Gamma.t.1.m2 <- function(t,u,s0,sj){
+Gamma.t.1.m2 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- -t*u+(sj-s0)
   
@@ -623,7 +636,7 @@ Gamma.t.1.m2 <- function(t,u,s0,sj){
   sum(t.0*exp(-t.1)*(1+t.1)*delta.j.t/3*u.perp)
 }
 
-Gamma.t.2.m2 <- function(t,u,s0,sj){
+Gamma.t.2.m2 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- -t*u+(sj-s0)
   
@@ -636,7 +649,7 @@ Gamma.t.2.m2 <- function(t,u,s0,sj){
   k12 <- -5*phis.est^2*t.0*exp(-t.1)*delta.j.t[1]*delta.j.t[2]/3
   (k11*u.perp[1]^2+2*k12*u.perp[1]*u.perp[2]+k22*u.perp[2]^2)
 }
-Gamma.1.m2 <- function(t,u,s0,sj){
+Gamma.1.m2 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- t*u+(s0-sj)
   
@@ -646,7 +659,7 @@ Gamma.1.m2 <- function(t,u,s0,sj){
   sum(t.0*exp(-t.1)*(1+t.1)*delta.j.t/3*u.perp)
 }
 
-Gamma.2.m2 <- function(t,u,s0,sj){
+Gamma.2.m2 <- function(t,u,s0,sj, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.j.t <- t*u+(s0-sj)
   
@@ -661,7 +674,7 @@ Gamma.2.m2 <- function(t,u,s0,sj){
 }
 
 # Covariance terms
-K.11.m2 <- function(t,u){
+K.11.m2 <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   delta.t2.t1 <- (t[2]-t[1])*u
   # womb-measure-grad
@@ -674,7 +687,7 @@ K.11.m2 <- function(t,u){
   (k11*u.perp[1]^2+2*k12*u.perp[1]*u.perp[2]+k22*u.perp[2]^2)
 }
 
-K.12.m2 <- function(t,u){
+K.12.m2 <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   c.u <- c(u.perp[1]^2,2*u.perp[1]*u.perp[2],u.perp[2]^2)
   delta.t2.t1 <- (t[2]-t[1])*u; norm.delta <- sqrt(sum((delta.t2.t1)^2))
@@ -686,12 +699,12 @@ K.12.m2 <- function(t,u){
     k122 <- 25*phis.est^4*exp(-t.1)*(1-sqrt(5)*phis.est*delta.t2.t1[2]^2/norm.delta)*delta.t2.t1[1]/3
     k211 <- k112; k212 <- k122
     k222 <- 25*phis.est^4*exp(-t.1)*(3-sqrt(5)*phis.est*delta.t2.t1[2]^2/norm.delta)*delta.t2.t1[2]/3
-    nabla3.K <- matrix(c(k111,k112,k122,k211,k212,k222), nr=2,nc=3,byrow=T)
+    nabla3.K <- matrix(c(k111,k112,k122,k211,k212,k222), nrow=2,ncol=3,byrow=T)
     return(crossprod(t(crossprod(u.perp,nabla3.K)),c.u))
   }
 }
 
-K.22.m2 <- function(t,u){
+K.22.m2 <- function(t,u, phis.est){
   u.perp <- rev(u); u.perp[2] <- -u.perp[2]
   c.u <- c(u.perp[1]^2,2*u.perp[1]*u.perp[2],u.perp[2]^2)
   delta.t2.t1 <- (t[2]-t[1])*u; norm.delta <- sqrt(sum((delta.t2.t1)^2))
@@ -711,7 +724,7 @@ K.22.m2 <- function(t,u){
     k2212 <- k1222
     nabla4.K <- matrix(c(k1111,k1112,k1122,
                          k1211,k1212,k1222,
-                         k2211,k2212,k2222), nr=3,nc=3,byrow=T)
+                         k2211,k2212,k2222), nrow=3,ncol=3,byrow=T)
     return(crossprod(t(crossprod(c.u,nabla4.K)),c.u))
   }
 }

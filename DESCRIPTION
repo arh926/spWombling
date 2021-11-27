@@ -7,12 +7,26 @@ Authors@R:
            role = c("aut", "cre"),
            email = "gxk9jg@virginia.edu",
            comment = c(ORCID = "0000-0002-5139-3620"))
-Description: Fubctions required for Bayesian Wombling on
-    spatial data. Required for the paper titled, Curvature Processes:
-    Directional Concavity in random fields
+Description: Functions required for Bayesian Wombling on spatial
+    data. Required for the paper titled, Curvature Processes: Directional
+    Concavity in random fields.
 License: GPL-3
 Encoding: UTF-8
 Language: es
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
+Imports: 
+    stats,
+    coda,
+    MASS,
+    Matrix,
+    parallel,
+    sp,
+    MBA,
+    latex2exp,
+    RColorBrewer,
+    fields,
+    raster,
+    graphics,
+    grDevices
