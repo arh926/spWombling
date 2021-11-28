@@ -170,7 +170,8 @@ div_est_val$sig <- apply(div_est_val,1,function(x){
 })
 ```
 ![pat1-grad](https://user-images.githubusercontent.com/73150479/143763736-66adb1db-e453-42ea-8742-defdef444fad.jpg)
-![pat2-curv](https://user-images.githubusercontent.com/73150479/143763742-ab18edba-aefb-4076-a84d-faeb651e9eb7.jpg)
+![pat1-curv](https://user-images.githubusercontent.com/73150479/143764182-21d77245-2005-4e9a-8586-3ce19076fd7e.jpg)
+
 
 ### Locate or Annotate curves of interest
 
