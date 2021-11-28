@@ -57,50 +57,55 @@ hlmBayes_sp <- function(coords = NULL,
                         nu_est = F,
                         stepnu_init = NULL,
                         nu_init = NULL, lower_nu = NULL, upper_nu = NULL){
-  L <- length(z_init); N <- length(y); p <- length(beta_init)
-  # initialize storage
-  res_phis <- res_sigma2 <- res_tau2 <- res_nu <- rep(NA,(niter+1))
-  res_beta <- matrix(NA, nrow=(niter+1),ncol=p)
-  res_z <- matrix(NA, nrow=(niter+1),ncol=L)
+  if(is.null(z_init)) L <- N <- length(y) else L <- length(z_init); N <- length(y)
   
   # some housekeeping
   Delta <- Matrix(as.matrix(dist(coords)))
   d.factor <- Matrix(1e-10*diag(L))
   if(is.null(nburn)) nburn <- niter/2
   if(is.null(steps_init)) steps_init <- 1
-  if(is.null(X)) X <- matrix(1,nrow=L)
-  if(is.null(XtX)) XtX <- crossprod(X,X)
+  if(is.null(X)){
+    X <- matrix(1,nrow=L); p <- 1
+    XtX <- crossprod(X,X)
+  }else{
+    XtX <- crossprod(X,X)
+  }
   if(is.null(D)){
     D <- 1:L
-    DtD <- 1:L
+    DtD <- diag(L)
   }else{
     DtD <- diag(table(D))
   }
   if(is.null(z_init)) z_init <- rep(0,L)
   if(is.null(lower_phis)) lower_phis <- 3/max(Delta)
   if(is.null(upper_phis)) upper_phis <- 300
-  if(is.null(phis_init)) phis_init <- runif(lower_phis,lower_phis+0.01)
+  if(is.null(phis_init)) phis_init <- runif(1,lower_phis,lower_phis+0.01)
   if(is.null(sigma2_init)) sigma2_init <- 5
   if(is.null(shape_sigma)) shape_sigma <- 2
   if(is.null(scale_sigma)) scale_sigma <- 1
-  if(is.null(tau2_init)) sigma2_init <- 1
+  if(is.null(tau2_init)) tau2_init <- 1
   if(is.null(shape_tau)) shape_tau <- 2
   if(is.null(scale_tau)) scale_tau <- 1
-  if(is.null(beta_init)) beta_init <- rep(0,nrow(X))
-  if(is.null(mean_beta)) mean_beta <- rep(0,nrow(X))
-  if(is.null(prec_beta)) prec_beta <- 1e-6*diag(nrow(X))
+  if(is.null(beta_init)) beta_init <- rep(0,ncol(X))
+  if(is.null(mean_beta)) mean_beta <- rep(0,ncol(X))
+  if(is.null(prec_beta)) prec_beta <- 1e-6*diag(ncol(X))
   if(is.null(cov.type)){
     nu_est <- T
     lower_nu <- 1
     upper_nu <- 3
   } 
-  
+  #browser()
+  p <- ncol(X)
+  # initialize storage
+  res_phis <- res_sigma2 <- res_tau2 <- res_nu <- rep(NA,(niter+1))
+  res_beta <- matrix(NA, nrow=(niter+1),ncol=p)
+  res_z <- matrix(NA, nrow=(niter+1),ncol=L)
   
   # starting values
   res_phis[1] <- phis <- phis_init
   res_sigma2[1] <- sigma2 <- sigma2_init
   res_tau2[1] <- tau2 <- tau2_init
-  res_beta[1,] <- beta <- t(beta_init)
+  res_beta[1,] <- beta <- beta_init
   res_z[1,] <- z <- z_init
   if(nu_est) res_nu[1] <- nu <- nu_init
   
@@ -257,10 +262,13 @@ hlmBayes_sp <- function(coords = NULL,
         if(accepts>0.5) steps <- steps*accepts/0.5
         else if(accepts<0.25) steps <- steps*accepts/0.25
         
-        acceptnu <- acceptnu/report; acceptnu_vec <- c(acceptnu_vec,acceptnu)
-        acceptnu <- max(0.1667, min(acceptnu,0.75))
-        if(acceptnu>0.5) stepnu <- stepnu*acceptnu/0.5
-        else if(accepts<0.25) stepnu <- stepnu*acceptnu/0.25
+        if(nu_est){
+          acceptnu <- acceptnu/report; acceptnu_vec <- c(acceptnu_vec,acceptnu)
+          acceptnu <- max(0.1667, min(acceptnu,0.75))
+          if(acceptnu>0.5) stepnu <- stepnu*acceptnu/0.5
+          else if(accepts<0.25) stepnu <- stepnu*acceptnu/0.25
+        }
+        
         cat("Iteration ",i,"\n")
         if(i <= nburn){
           if(nu_est){
