@@ -33,10 +33,11 @@ tau <- 1
 coords <- matrix(runif(2*N),nr=N,nc=2) 
 # synthetic pattern 
 y <- rnorm(N,10*(sin(3*pi*coords[,1])+cos(3*pi*coords[,2])),tau)
-
+# y <- rnorm(N,10*(sin(3*pi*coords[,1])*cos(3*pi*coords[,2])),tau)
 y=y # response
 X=matrix(1,nr=N) # intercept
 ```
+![pattern](https://user-images.githubusercontent.com/73150479/143763604-311b0763-7148-45c3-9979-d732bedc01bf.jpg)
 
 ###Fit a spatial Bayesian hierarchical model to the data
 
