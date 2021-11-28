@@ -7,7 +7,7 @@ Reference to the paper titled, Curvature Processes: Directional Concavity in Gau
 
 Code for performing curvilinear Bayesian wombling on data
 
-##Contents
+## Contents
 
 1. Load the data and separate (a) co-ordinates (b) response (c) covariates
 2. Fit a spatial Bayesian hierarchical model to the data
@@ -17,7 +17,7 @@ Code for performing curvilinear Bayesian wombling on data
 
 Demonstration with synthetic data.
 
-###Load the data and separate (a) co-ordinates (b) response (c) covariates
+### Load the data and separate (a) co-ordinates (b) response (c) covariates
 ```
 if(!require(devtools)) install.packages("devtools")
 devtools::install_github('arh926/spWombling')
@@ -39,7 +39,7 @@ X=matrix(1,nr=N) # intercept
 ```
 ![pattern](https://user-images.githubusercontent.com/73150479/143763604-311b0763-7148-45c3-9979-d732bedc01bf.jpg)
 
-###Fit a spatial Bayesian hierarchical model to the data
+### Fit a spatial Bayesian hierarchical model to the data
 
 ```
 niter <- 1e4
@@ -64,7 +64,7 @@ coef <- model_summary$summary.pars; round(coef,4)
 z <- model_summary$summary.latent
 ```
 
-###Perform gradient, curvature and posterior surface analysis
+### Perform gradient, curvature and posterior surface analysis
 
 ```
 grid.points <- as.matrix(expand.grid(seq(0,1,by=0.05)[-c(1,21)],
@@ -170,7 +170,7 @@ div_est_val$sig <- apply(div_est_val,1,function(x){
 })
 ```
 
-###Locate or Annotate curves of interest
+### Locate or Annotate curves of interest
 
 ```
 #####################################
@@ -213,7 +213,7 @@ plot(c(0,3),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = '')
 text(x=2, y = seq(0.01,0.99,l=6), labels = sprintf("%.2f",round(seq(min(y),max(y),l=6),2)))
 rasterImage(legend_image, 0, 0, 1,1)
 ```
-###Perform rectilinear wombling at line segments
+### Perform rectilinear wombling at line segments
 ```
 curve <- subset.points.1@lines[[1]]@Lines[[1]]@coords
 womb.measure <- bayes_cwomb(coords = coords,
