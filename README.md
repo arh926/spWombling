@@ -237,8 +237,8 @@ womb.measure$womb.measure.inf
 
 | Name   | Email       |              |
 |:------ |:----------- | :----------- |
-| Aritra Halder (maintainer)| gxk9jg@virginia.edu   | Research Assistant Professor, UVa|                         
-| Sudipto Banerjee | sudipto@ucla.edu   | Professor and Chair, Department of Biostatistics  UCLA |
-| Dipak K. Dey | dipak.dey@uconn.edu   | Board of Trustees Distinguished Professor, Department of Statistics  UCONN |
+| Aritra Halder (maintainer)| gxk9jg@virginia.edu   | Research Assistant Professor, UVA|                         
+| Sudipto Banerjee | sudipto@ucla.edu   | Professor and Chair, Department of Biostatistics,  UCLA |
+| Dipak K. Dey | dipak.dey@uconn.edu   | Board of Trustees Distinguished Professor, Department of Statistics,  UCONN |
 <!--- --->
 
