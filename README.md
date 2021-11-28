@@ -1,5 +1,5 @@
 # spWombling
-Illustration of Bayesian Wombling on spatial data.
+Illustration of curvilinear Bayesian Wombling on spatial data.
 
 
 Reference to the paper titled, Curvature Processes: Directional Concavity in Gaussian random fields. (Aritra Halder, Sudipto Banerjee, Dipak K. Dey)
@@ -229,5 +229,6 @@ womb.measure <- bayes_cwomb(coords = coords,
 str(womb.measure)
 womb.measure$womb.measure.inf
 ```
-![post-grad-1](https://user-images.githubusercontent.com/73150479/143763716-3931ea11-d8f6-4819-9828-57140a04f8bc.jpg)![post-grad-2](https://user-images.githubusercontent.com/73150479/143763720-e4ce5560-db24-42a9-95e4-e3fc52d51719.jpg)
+![post-grad-1](https://user-images.githubusercontent.com/73150479/143763716-3931ea11-d8f6-4819-9828-57140a04f8bc.jpg)
+![post-grad-2](https://user-images.githubusercontent.com/73150479/143763720-e4ce5560-db24-42a9-95e4-e3fc52d51719.jpg)
 
