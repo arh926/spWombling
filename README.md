@@ -169,6 +169,8 @@ div_est_val$sig <- apply(div_est_val,1,function(x){
   else return(0)
 })
 ```
+![pat1-grad](https://user-images.githubusercontent.com/73150479/143763736-66adb1db-e453-42ea-8742-defdef444fad.jpg)
+![pat2-curv](https://user-images.githubusercontent.com/73150479/143763742-ab18edba-aefb-4076-a84d-faeb651e9eb7.jpg)
 
 ### Locate or Annotate curves of interest
 
@@ -227,3 +229,6 @@ womb.measure <- bayes_cwomb(coords = coords,
 str(womb.measure)
 womb.measure$womb.measure.inf
 ```
+![post-grad-1](https://user-images.githubusercontent.com/73150479/143763716-3931ea11-d8f6-4819-9828-57140a04f8bc.jpg)
+![post-grad-2](https://user-images.githubusercontent.com/73150479/143763720-e4ce5560-db24-42a9-95e4-e3fc52d51719.jpg)
+
