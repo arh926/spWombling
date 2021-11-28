@@ -233,3 +233,12 @@ womb.measure$womb.measure.inf
 ![post-grad-1](https://user-images.githubusercontent.com/73150479/143763716-3931ea11-d8f6-4819-9828-57140a04f8bc.jpg)
 ![post-grad-2](https://user-images.githubusercontent.com/73150479/143763720-e4ce5560-db24-42a9-95e4-e3fc52d51719.jpg)
 
+## Authors
+
+| Name   | Email       |              |
+|:------ |:----------- | :----------- |
+| Aritra Halder (maintainer)| gxk9jg@virginia.edu   | Research Assistant Professor, UVa|                         
+| Sudipto Banerjee | sudipto@ucla.edu   | Professor and Chair, Department of Biostatistics  UCLA |
+| Dipak K. Dey | dipak.dey@uconn.edu   | Board of Trustees Distinguished Professor, Department of Statistics  UCONN |
+<!--- --->
+
