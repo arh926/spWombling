@@ -174,7 +174,9 @@ div_est_val$sig <- apply(div_est_val,1,function(x){
   else return(0)
 })
 ```
+#### True and Estimated Gradients
 ![pat1-grad](https://user-images.githubusercontent.com/73150479/143763736-66adb1db-e453-42ea-8742-defdef444fad.jpg)
+#### True and Estimated Curvature
 ![pat1-curv](https://user-images.githubusercontent.com/73150479/143764182-21d77245-2005-4e9a-8586-3ce19076fd7e.jpg)
 
 
