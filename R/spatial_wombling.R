@@ -42,7 +42,7 @@ bayes_cwomb <- function(coords = NULL,
                         approx = NULL,
                         verbose = T,
                         rule.len = 10){
-  len <- rule.len; Delta <- Matrix(as.matrix(dist(coords)))
+  len <- rule.len; Delta <- as.matrix(dist(coords))
   # quadrature rule
   rule.uv <-  seq(0,1,length.out=len)
   rule.mv <- expand.grid(rule.uv,rule.uv)

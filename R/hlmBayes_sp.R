@@ -60,8 +60,8 @@ hlmBayes_sp <- function(coords = NULL,
   if(is.null(z_init)) L <- N <- length(y) else L <- length(z_init); N <- length(y)
   
   # some housekeeping
-  Delta <- Matrix(as.matrix(dist(coords)))
-  d.factor <- Matrix(1e-10*diag(L))
+  Delta <- as.matrix(dist(coords))
+  d.factor <- 1e-10*diag(L)
   if(is.null(nburn)) nburn <- niter/2
   if(is.null(steps_init)) steps_init <- 1
   if(is.null(X)){

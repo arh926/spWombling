@@ -32,7 +32,7 @@ spatial_gradient <- function(coords = NULL,
                              nbatch = 200,
                              nburn = NULL,
                              return.mcmc = T){
-  Delta <- Matrix(as.matrix(dist(coords)))
+  Delta <- as.matrix(dist(coords))
   d.factor <- 1e-10*diag(nrow(Delta))
   if(is.null(samples)) samples <- (nburn+1):niter
   

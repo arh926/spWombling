@@ -5,7 +5,7 @@ Authors@R:
     person(given = "Aritra",
            family = "Halder",
            role = c("aut", "cre"),
-           email = "gxk9jg@virginia.edu",
+           email = "arh926@virginia.edu",
            comment = c(ORCID = "0000-0002-5139-3620"))
 Description: Functions required for Bayesian Wombling on spatial
     data. Required for the paper titled, Curvature Processes: Directional
@@ -15,24 +15,17 @@ Encoding: UTF-8
 Language: es
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.2
 Imports: 
     stats,
     coda,
     MASS,
-    Matrix,
     parallel,
     sp,
+    fields,
     MBA,
     latex2exp,
     RColorBrewer,
-    fields,
     raster,
     graphics,
     grDevices
-Depends: 
-    R (>= 2.10)
-Suggests: 
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr
