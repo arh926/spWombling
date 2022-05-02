@@ -7,7 +7,7 @@ Illustration of curvilinear Bayesian Wombling on spatial data.
   <img width="600" height="550" src="https://user-images.githubusercontent.com/73150479/143766893-6adbde31-34d4-4f68-aea2-71c69b563455.png">
 <p>
   
-Reference to the paper titled, Curvature Processes: Directional Concavity in Gaussian random fields. (Aritra Halder, Sudipto Banerjee, Dipak K. Dey)
+Reference to the paper titled, Bayesian Modeling with Spatial Curvature Processes. (Aritra Halder, Sudipto Banerjee, Dipak K. Dey)
 
 
 Code for performing curvilinear Bayesian wombling on data
