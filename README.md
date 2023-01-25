@@ -1,5 +1,6 @@
 # spWombling
 
+Data is available.
 
 Illustration of curvilinear Bayesian Wombling on spatial data.
 
