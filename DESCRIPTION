@@ -5,27 +5,19 @@ Authors@R:
     person(given = "Aritra",
            family = "Halder",
            role = c("aut", "cre"),
-           email = "arh926@virginia.edu",
+           email = "aritra.halder@drexel.edu",
            comment = c(ORCID = "0000-0002-5139-3620"))
 Description: Functions required for Bayesian Wombling on spatial
-    data. Required for the paper titled, Curvature Processes: Directional
-    Concavity in random fields.
+    data. Required for the paper titled, Bayesian Modeling with Spatial Curvature Processes.
 License: GPL-3
 Encoding: UTF-8
 Language: es
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
-Imports: 
-    stats,
-    coda,
-    MASS,
-    parallel,
-    sp,
-    fields,
-    MBA,
-    latex2exp,
-    RColorBrewer,
-    raster,
-    graphics,
-    grDevices
+RoxygenNote: 7.2.3
+Imports: stats, coda, MASS, Matrix, parallel, sp, fields, MBA,
+        latex2exp, RColorBrewer, raster, graphics, grDevices
+NeedsCompilation: no
+Packaged: 2023-01-26 08:26:51 UTC; aritrah
+Author: Aritra Halder [aut, cre] (<https://orcid.org/0000-0002-5139-3620>)
+Maintainer: Aritra Halder <aritra.halder@drexel.edu>
