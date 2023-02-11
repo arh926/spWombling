@@ -1,14 +1,14 @@
 # spWombling
 
+Reference to the paper titled, Bayesian Modeling with Spatial Curvature Processes. Journal of American Statistical Association (2023) (https://doi.org/10.1080/01621459.2023.2177166).
 
-Illustration of curvilinear Bayesian Wombling on spatial data.
 
 <p align="center">
   <img width="600" height="550" src="https://user-images.githubusercontent.com/73150479/143766893-6adbde31-34d4-4f68-aea2-71c69b563455.png">
 <p>
   
-Reference to the paper titled, Bayesian Modeling with Spatial Curvature Processes. Journal of American Statistical Association (2023) (https://doi.org/10.1080/01621459.2023.2177166).
 
+Illustration of curvilinear Bayesian Wombling on spatial data.
 
 Code for performing curvilinear Bayesian wombling on data
 
