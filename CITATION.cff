@@ -7,7 +7,7 @@ authors:
 - family-names: "Banerjee"
   given-names: "Sudipto"
   orcid: "https://orcid.org/0000-0002-2239-208X"
-title: "spWombling"
+title: "spWombling: Bayesian Wombling using Differential Processes (https://github.com/arh926/spWombling)"
 version: 1.0.0
 doi: 10.5281/zenodo.1234
 date-released: 2023-02-11
