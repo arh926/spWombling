@@ -1,6 +1,6 @@
 # spWombling
 
-Reference to the paper titled, Bayesian Modeling with Spatial Curvature Processes. Journal of the American Statistical Association (2023) (https://doi.org/10.1080/01621459.2023.2177166).
+Reference to the paper titled, "Bayesian Modeling with Spatial Curvature Processes". Journal of the American Statistical Association (2023) (https://doi.org/10.1080/01621459.2023.2177166).
 
 
 <p align="center">
