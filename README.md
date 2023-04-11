@@ -1,4 +1,6 @@
-# spWombling
+# spWombling: An R-package to perform Bayesian curvilinear curvature Wombling on spatial data
+
+![Maintainer](https://img.shields.io/badge/maintainer-arh926-blue)
 
 Reference to the paper titled, "Bayesian Modeling with Spatial Curvature Processes". Journal of the American Statistical Association (2023) (https://doi.org/10.1080/01621459.2023.2177166).
 
