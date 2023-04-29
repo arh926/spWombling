@@ -2,7 +2,7 @@
 % Please edit documentation in R/hlmBayes_sp.R
 \name{hlmBayes_sp}
 \alias{hlmBayes_sp}
-\title{A spatial hierarchical Bayes Markov Chain Monet Carlo sampler}
+\title{A spatial hierarchical Bayes Markov Chain Monte Carlo sampler}
 \usage{
 hlmBayes_sp(
   coords = NULL,

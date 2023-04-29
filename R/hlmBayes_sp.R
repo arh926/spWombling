@@ -1,4 +1,4 @@
-#' A spatial hierarchical Bayes Markov Chain Monet Carlo sampler
+#' A spatial hierarchical Bayes Markov Chain Monte Carlo sampler
 #'
 #' Fits a univariate Gaussian spatial regression model: \eqn{Y(s)=x(s)^T\beta+Z(s)+\epsilon}. Parameters not listed are optional.
 #'
