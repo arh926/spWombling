@@ -13,14 +13,15 @@ sp_plot(
   xlab = NULL,
   ylab = NULL,
   lab = NULL,
-  add = F,
-  categorical = F,
-  points.plot = F,
-  contour.plot = F,
-  legend = T,
-  raster.surf = F,
+  add = FALSE,
+  categorical = FALSE,
+  points.plot = FALSE,
+  points.cex = 0.3,
+  contour.plot = FALSE,
+  legend = TRUE,
+  raster.surf = FALSE,
   sig = NULL,
-  grid = F
+  grid = FALSE
 )
 }
 \arguments{

@@ -255,20 +255,19 @@ hlmBayes_sp <- function(coords = NULL,
       z <- rep(0,L)
     }
     # Adaptive MHS: defaults at around 40%
-    if(i%%report==0){
+    if(i%%report == 0){
+      accepts <- accepts/report; accepts_vec <- c(accepts_vec,accepts)
+      accepts <- max(0.1667, min(accepts,0.75))
+      if(accepts>0.5) steps <- steps*accepts/0.5
+      else if(accepts<0.25) steps <- steps*accepts/0.25
+      
+      if(nu_est){
+        acceptnu <- acceptnu/report; acceptnu_vec <- c(acceptnu_vec,acceptnu)
+        acceptnu <- max(0.1667, min(acceptnu,0.75))
+        if(acceptnu>0.5) stepnu <- stepnu*acceptnu/0.5
+        else if(accepts<0.25) stepnu <- stepnu*acceptnu/0.25
+      }
       if(verbose){
-        accepts <- accepts/report; accepts_vec <- c(accepts_vec,accepts)
-        accepts <- max(0.1667, min(accepts,0.75))
-        if(accepts>0.5) steps <- steps*accepts/0.5
-        else if(accepts<0.25) steps <- steps*accepts/0.25
-        
-        if(nu_est){
-          acceptnu <- acceptnu/report; acceptnu_vec <- c(acceptnu_vec,acceptnu)
-          acceptnu <- max(0.1667, min(acceptnu,0.75))
-          if(acceptnu>0.5) stepnu <- stepnu*acceptnu/0.5
-          else if(accepts<0.25) stepnu <- stepnu*acceptnu/0.25
-        }
-        
         cat("Iteration ",i,"\n")
         if(i <= nburn){
           if(nu_est){

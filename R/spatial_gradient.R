@@ -17,7 +17,7 @@
 #' @importFrom MASS mvrnorm
 #' @importFrom Matrix Matrix
 #' @importFrom Matrix forceSymmetric
-#' @import parallel
+#' @import parallel doParallel
 #' @keywords 
 #' @export
 #' @examples
@@ -33,8 +33,10 @@ spatial_gradient <- function(coords = NULL,
                              nburn = NULL,
                              return.mcmc = T){
   Delta <- as.matrix(dist(coords))
-  d.factor <- 1e-10*diag(nrow(Delta))
-  if(is.null(samples)) samples <- (nburn+1):niter
+  d.factor <- 1e-10 * diag(nrow(Delta))
+  if(is.null(niter)) niter <- length(chain$parameters$post_phis)
+  if(is.null(nburn)) nburn <- niter/2
+  if(is.null(samples)) samples <- (nburn + 1):niter
   
   # parallelizing gradient calculation on MCMC chain
   numCores <- detectCores()
@@ -44,147 +46,293 @@ spatial_gradient <- function(coords = NULL,
   
   
   dist.s0 <- sapply(1:nrow(grid.points),function(y) apply(coords,1,function(x) sqrt(sum((x-grid.points[y,])^2)) ))
-  delta.s0 <- sapply(1:nrow(grid.points),function(y) t(apply(coords,1,function(x) x-grid.points[y,])), simplify = F)
+  delta.s0 <- sapply(1:nrow(grid.points), function(y) t(apply(coords,1,function(x) x-grid.points[y,])), simplify = F)
   
-  if(cov.type=="gaussian"){
-    results.grad <- mclapply(parallel.index, function(x){
-      samp.x <- samp.list[[x]]
-      post_phi_thin <- chain$parameters$post_phis[samp.x]
-      post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
-      # post_beta_thin <- chain$parameters$post_beta[samp.x]
-      post_z_thin <- chain$latent.effect$post_z[samp.x,]
-      
-      
-      mcmc.grad <- list()
-      for(i.mcmc in 1:length(post_phi_thin)){
+  if(Sys.info()$sysname == "windows"){
+    registerDoParallel(cores = ncores)
+    if(cov.type == "gaussian"){
+      results.grad <- foreach(x = parallel.index) %do% {
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
         
-        phi.grad.est <- post_phi_thin[i.mcmc]
-        sig2.grad.est <- post_sigma2_thin[i.mcmc]
-        z.grad.est <- post_z_thin[i.mcmc,]
-        # beta.grad.est <- post_beta_thin[i.mcmc]
         
-        Sig.Z.grad.est <- sig2.grad.est*exp(-phi.grad.est*Delta^2)+d.factor
-        s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
-        
-        grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=5)
-        
-        for(i in 1:nrow(grid.points)){
-          # gaussian covariance
-          nabla.K <- cbind(-2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]], # gradient
-                           -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
-                           4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
-                           -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,2]^2)) #-ve curvature-22
-          V.0 <- sig2.grad.est*diag(c(2*phi.grad.est,
-                                      2*phi.grad.est,
-                                      12*phi.grad.est^2,
-                                      4*phi.grad.est^2,
-                                      12*phi.grad.est^2))
-          nabla.K.t <- t(cbind(2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]], # gradient
-                               -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
-                               4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
-                               -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,2]^2))) #-ve curvature-22
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
           
-          tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
-          mean.grad <- crossprod(tmp, z.grad.est)
-          var.grad <- forceSymmetric(V.0+crossprod(tmp,nabla.K))
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
+          # beta.grad.est <- post_beta_thin[i.mcmc]
           
-          grad.est[i,] <- as.numeric(mvrnorm(1,mean.grad,var.grad))
+          Sig.Z.grad.est <- sig2.grad.est * exp(-phi.grad.est * Delta^2) + d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
+          
+          grad.est <- matrix(NA, nrow = nrow(grid.points),ncol = 5)
+          
+          for(i in 1:nrow(grid.points)){
+            # gaussian covariance
+            nabla.K <- cbind(-2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * delta.s0[[i]], # gradient
+                             -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 1]^2), # -ve curvature-11
+                             4 * phi.grad.est^2 * sig2.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * delta.s0[[i]][,1] * delta.s0[[i]][, 2], # -ve curvature-12
+                             -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 2]^2)) #-ve curvature-22
+            V.0 <- sig2.grad.est * diag(c(2 * phi.grad.est,
+                                          2 * phi.grad.est,
+                                          12 * phi.grad.est^2,
+                                          4 * phi.grad.est^2,
+                                          12 * phi.grad.est^2))
+            nabla.K.t <- t(cbind(2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * delta.s0[[i]], # gradient
+                                 -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 1]^2), # -ve curvature-11
+                                 4 * phi.grad.est^2 * sig2.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * delta.s0[[i]][,1] * delta.s0[[i]][, 2], # -ve curvature-12
+                                 -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 2]^2))) #-ve curvature-22
+            
+            tmp <- t(crossprod(t(nabla.K.t), s.grad.in))
+            mean.grad <- crossprod(tmp, z.grad.est)
+            var.grad <- forceSymmetric(V.0 + crossprod(tmp, nabla.K))
+            
+            grad.est[i,] <- as.numeric(mvrnorm(1, mean.grad, var.grad))
+          }
+          mcmc.grad[[i.mcmc]] <- grad.est
         }
-        mcmc.grad[[i.mcmc]] <- grad.est
+        return(mcmc.grad)
       }
-      return(mcmc.grad)
-    }, mc.cores = numCores)
-  }else if(cov.type=="matern1"){
-    results.grad <- mclapply(parallel.index, function(x){
-      samp.x <- samp.list[[x]]
-      post_phi_thin <- chain$parameters$post_phis[samp.x]
-      post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
-      # post_beta_thin <- chain$parameters$post_beta[samp.x]
-      post_z_thin <- chain$latent.effect$post_z[samp.x,]
-      
-      
-      mcmc.grad <- list()
-      for(i.mcmc in 1:length(post_phi_thin)){
+    }else if(cov.type == "matern2"){
+      results.grad <- foreach(x = parallel.index) %do% {
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
+        #chain$post_beta[samp.x]
         
-        phi.grad.est <- post_phi_thin[i.mcmc]
-        sig2.grad.est <- post_sigma2_thin[i.mcmc]
-        z.grad.est <- post_z_thin[i.mcmc,]
-        # beta.grad.est <- post_beta_thin[i.mcmc]
         
-        Sig.Z.grad.est <- (1+phi.grad.est*sqrt(3)*Delta)*exp(-phi.grad.est*sqrt(3)*Delta)+d.factor
-        s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
-        
-        grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=2)
-        for(i in 1:nrow(grid.points)){
-          # matern1 covariance
-          nabla.K <- -3*phi.grad.est^2*exp(-phi.grad.est*sqrt(3)*dist.s0[,i])*delta.s0[[i]]
-          V.0 <- 3*phi.grad.est^2*diag(2)
-          nabla.K.t <- -t(nabla.K)
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
           
-          tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
-          mean.grad <- crossprod(tmp,z.grad.est)
-          var.grad <- forceSymmetric(V.0-crossprod(tmp,nabla.K))
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
           
-          grad.est[i,] <- as.numeric(sqrt(sig2.grad.est)*chol(var.grad)%*%rnorm(2)+mean.grad)
+          
+          Sig.Z.grad.est <- (1 + sqrt(5) * phi.grad.est * Delta + 5 * phi.grad.est^2 * Delta^2/3) * exp(-sqrt(5) * phi.grad.est * Delta) + d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
+          
+          grad.est <- matrix(NA, nrow = nrow(grid.points), ncol = 5)
+          for(i in 1:nrow(grid.points)){
+            #s0 <- grid.points[i,]
+            #dist.s0 <- apply(coords,1,function(x) sqrt(sum((x-s0)^2)) )
+            #delta.s0 <- t(apply(coords,1,function(x) x-s0 ))
+            
+            # matern2 covariance
+            nabla.K <- 5 * cbind(-phi.grad.est^2 * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]) * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
+                                 -phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est*dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
+                                 5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1] * delta.s0[[i]][,2],
+                                 -phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3
+            V.0 <- 5 * diag(c(phi.grad.est^2/3,
+                              phi.grad.est^2/3,
+                              5 * phi.grad.est^4,
+                              5 * phi.grad.est^4/3,
+                              5 * phi.grad.est^4))
+            nabla.K.t <- t(5 * cbind(phi.grad.est^2 * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]) * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
+                                   - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
+                                   5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1]*delta.s0[[i]][,2],
+                                   - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]- 5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3)
+            
+            tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
+            mean.grad <- crossprod(tmp,z.grad.est)
+            var.grad <- forceSymmetric(V.0 + crossprod(tmp,nabla.K))
+            
+            grad.est[i,] <- as.numeric(sqrt(sig2.grad.est) * chol(var.grad) %*% rnorm(5) + mean.grad)
+          }
+          mcmc.grad[[i.mcmc]] <- grad.est
         }
-        
-        mcmc.grad[[i.mcmc]] <- grad.est
+        return(mcmc.grad)
       }
-      return(mcmc.grad)
-    }, mc.cores = numCores)
-  }else if(cov.type=="matern2"){
-    results.grad <- mclapply(parallel.index, function(x){
-      samp.x <- samp.list[[x]]
-      post_phi_thin <- chain$parameters$post_phis[samp.x]
-      post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
-      # post_beta_thin <- chain$parameters$post_beta[samp.x]
-      post_z_thin <- chain$latent.effect$post_z[samp.x,]
-      #chain$post_beta[samp.x]
-      
-      
-      mcmc.grad <- list()
-      for(i.mcmc in 1:length(post_phi_thin)){
-        
-        phi.grad.est <- post_phi_thin[i.mcmc]
-        sig2.grad.est <- post_sigma2_thin[i.mcmc]
-        z.grad.est <- post_z_thin[i.mcmc,]
+    }else if(cov.type == "matern1"){
+      results.grad <- foreach(x = parallel.index) %do% {
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
         
         
-        Sig.Z.grad.est <- (1+sqrt(5)*phi.grad.est*Delta+5*phi.grad.est^2*Delta^2/3)*exp(-sqrt(5)*phi.grad.est*Delta)+d.factor
-        s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
-        
-        grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=5)
-        for(i in 1:nrow(grid.points)){
-          #s0 <- grid.points[i,]
-          #dist.s0 <- apply(coords,1,function(x) sqrt(sum((x-s0)^2)) )
-          #delta.s0 <- t(apply(coords,1,function(x) x-s0 ))
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
           
-          # matern2 covariance
-          nabla.K <- 5*cbind(-phi.grad.est^2*(1+sqrt(5)*phi.grad.est*dist.s0[,i])*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]],
-                             -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
-                             5*phi.grad.est^4*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],
-                             -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,2]^2))/3
-          V.0 <- 5*diag(c(phi.grad.est^2/3,
-                          phi.grad.est^2/3,
-                          5*phi.grad.est^4,
-                          5*phi.grad.est^4/3,
-                          5*phi.grad.est^4))
-          nabla.K.t <- t(5*cbind(phi.grad.est^2*(1+sqrt(5)*phi.grad.est*dist.s0[,i])*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]],
-                                 -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
-                                 5*phi.grad.est^4*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],
-                                 -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,2]^2))/3)
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
+          # beta.grad.est <- post_beta_thin[i.mcmc]
           
-          tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
-          mean.grad <- crossprod(tmp,z.grad.est)
-          var.grad <- forceSymmetric(V.0+crossprod(tmp,nabla.K))
+          Sig.Z.grad.est <- (1+phi.grad.est*sqrt(3)*Delta)*exp(-phi.grad.est*sqrt(3)*Delta)+d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
           
-          grad.est[i,] <- as.numeric(sqrt(sig2.grad.est)*chol(var.grad)%*%rnorm(5)+mean.grad)
+          grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=2)
+          for(i in 1:nrow(grid.points)){
+            # matern1 covariance
+            nabla.K <- -3*phi.grad.est^2*exp(-phi.grad.est*sqrt(3)*dist.s0[,i])*delta.s0[[i]]
+            V.0 <- 3*phi.grad.est^2*diag(2)
+            nabla.K.t <- -t(nabla.K)
+            
+            tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
+            mean.grad <- crossprod(tmp,z.grad.est)
+            var.grad <- forceSymmetric(V.0-crossprod(tmp,nabla.K))
+            
+            grad.est[i,] <- as.numeric(sqrt(sig2.grad.est)*chol(var.grad)%*%rnorm(2)+mean.grad)
+          }
+          
+          mcmc.grad[[i.mcmc]] <- grad.est
         }
-        mcmc.grad[[i.mcmc]] <- grad.est
+        return(mcmc.grad)
       }
-      return(mcmc.grad)
-    }, mc.cores = numCores)
-  }else print("Error:: Enter valid covariance")
+    }else{stop("Enter valid covariance! Choices are:: gaussian, matern1, matern2!")}
+    
+  }else{
+    if(cov.type == "gaussian"){
+      results.grad <- mclapply(parallel.index, function(x){
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
+        
+        
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
+          
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
+          # beta.grad.est <- post_beta_thin[i.mcmc]
+          
+          Sig.Z.grad.est <- sig2.grad.est*exp(-phi.grad.est*Delta^2)+d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
+          
+          grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=5)
+          
+          for(i in 1:nrow(grid.points)){
+            # gaussian covariance
+            nabla.K <- cbind(-2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]], # gradient
+                             -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
+                             4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
+                             -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,2]^2)) #-ve curvature-22
+            V.0 <- sig2.grad.est*diag(c(2*phi.grad.est,
+                                        2*phi.grad.est,
+                                        12*phi.grad.est^2,
+                                        4*phi.grad.est^2,
+                                        12*phi.grad.est^2))
+            nabla.K.t <- t(cbind(2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]], # gradient
+                                 -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
+                                 4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
+                                 -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,2]^2))) #-ve curvature-22
+            
+            tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
+            mean.grad <- crossprod(tmp, z.grad.est)
+            var.grad <- forceSymmetric(V.0+crossprod(tmp,nabla.K))
+            
+            grad.est[i,] <- as.numeric(mvrnorm(1,mean.grad,var.grad))
+          }
+          mcmc.grad[[i.mcmc]] <- grad.est
+        }
+        return(mcmc.grad)
+      }, mc.cores = numCores)
+    }else if(cov.type=="matern1"){
+      results.grad <- mclapply(parallel.index, function(x){
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
+        
+        
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
+          
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
+          # beta.grad.est <- post_beta_thin[i.mcmc]
+          
+          Sig.Z.grad.est <- (1+phi.grad.est*sqrt(3)*Delta)*exp(-phi.grad.est*sqrt(3)*Delta)+d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
+          
+          grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=2)
+          for(i in 1:nrow(grid.points)){
+            # matern1 covariance
+            nabla.K <- -3*phi.grad.est^2*exp(-phi.grad.est*sqrt(3)*dist.s0[,i])*delta.s0[[i]]
+            V.0 <- 3*phi.grad.est^2*diag(2)
+            nabla.K.t <- -t(nabla.K)
+            
+            tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
+            mean.grad <- crossprod(tmp,z.grad.est)
+            var.grad <- forceSymmetric(V.0-crossprod(tmp,nabla.K))
+            
+            grad.est[i,] <- as.numeric(sqrt(sig2.grad.est)*chol(var.grad)%*%rnorm(2)+mean.grad)
+          }
+          
+          mcmc.grad[[i.mcmc]] <- grad.est
+        }
+        return(mcmc.grad)
+      }, mc.cores = numCores)
+    }else if(cov.type=="matern2"){
+      results.grad <- mclapply(parallel.index, function(x){
+        samp.x <- samp.list[[x]]
+        post_phi_thin <- chain$parameters$post_phis[samp.x]
+        post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
+        # post_beta_thin <- chain$parameters$post_beta[samp.x]
+        post_z_thin <- chain$latent.effect$post_z[samp.x,]
+        #chain$post_beta[samp.x]
+        
+        
+        mcmc.grad <- list()
+        for(i.mcmc in 1:length(post_phi_thin)){
+          
+          phi.grad.est <- post_phi_thin[i.mcmc]
+          sig2.grad.est <- post_sigma2_thin[i.mcmc]
+          z.grad.est <- post_z_thin[i.mcmc,]
+          
+          
+          Sig.Z.grad.est <- (1+sqrt(5)*phi.grad.est*Delta+5*phi.grad.est^2*Delta^2/3)*exp(-sqrt(5)*phi.grad.est*Delta)+d.factor
+          s.grad.in <- chol2inv(chol(Sig.Z.grad.est))
+          
+          grad.est <- matrix(NA, nrow=nrow(grid.points),ncol=5)
+          for(i in 1:nrow(grid.points)){
+            #s0 <- grid.points[i,]
+            #dist.s0 <- apply(coords,1,function(x) sqrt(sum((x-s0)^2)) )
+            #delta.s0 <- t(apply(coords,1,function(x) x-s0 ))
+            
+            # matern2 covariance
+            nabla.K <- 5*cbind(-phi.grad.est^2 * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]) * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
+                               -phi.grad.est^2 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
+                               5*phi.grad.est^4 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],
+                               -phi.grad.est^2 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,2]^2))/3
+            V.0 <- 5*diag(c(phi.grad.est^2/3,
+                            phi.grad.est^2/3,
+                            5*phi.grad.est^4,
+                            5*phi.grad.est^4/3,
+                            5*phi.grad.est^4))
+            nabla.K.t <- t(5*cbind(phi.grad.est^2*(1+sqrt(5)*phi.grad.est*dist.s0[,i])*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]],
+                                   -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
+                                   5*phi.grad.est^4*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],
+                                   -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,2]^2))/3)
+            
+            tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
+            mean.grad <- crossprod(tmp,z.grad.est)
+            var.grad <- forceSymmetric(V.0+crossprod(tmp,nabla.K))
+            
+            grad.est[i,] <- as.numeric(sqrt(sig2.grad.est)*chol(var.grad)%*%rnorm(5)+mean.grad)
+          }
+          mcmc.grad[[i.mcmc]] <- grad.est
+        }
+        return(mcmc.grad)
+      }, mc.cores = numCores)
+    }else print("Error:: Enter valid covariance")
+    
+  }
+
   
   if(cov.type=="matern1"){
     grad.s1.temp <- grad.s2.temp <- c()
