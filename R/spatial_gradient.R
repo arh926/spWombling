@@ -49,7 +49,8 @@ spatial_gradient <- function(coords = NULL,
   dist.s0 <- sapply(1:nrow(grid.points),function(y) apply(coords,1,function(x) sqrt(sum((x-grid.points[y,])^2)) ))
   delta.s0 <- sapply(1:nrow(grid.points), function(y) t(apply(coords,1,function(x) x-grid.points[y,])), simplify = F)
   
-  if(sysinfo["sysname"] == "windows"){
+  if(sysinfo["sysname"] == "Windows"){
+    
     cl <- makeCluster(ncores)
     registerDoParallel(cores = ncores)
     if(cov.type == "gaussian"){
