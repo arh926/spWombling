@@ -31,7 +31,8 @@ spatial_gradient <- function(coords = NULL,
                              niter = NULL,
                              nbatch = 200,
                              nburn = NULL,
-                             return.mcmc = T){
+                             return.mcmc = TRUE){
+  sysinfo = Sys.info()
   Delta <- as.matrix(dist(coords))
   d.factor <- 1e-10 * diag(nrow(Delta))
   if(is.null(niter)) niter <- length(chain$parameters$post_phis)
@@ -48,7 +49,8 @@ spatial_gradient <- function(coords = NULL,
   dist.s0 <- sapply(1:nrow(grid.points),function(y) apply(coords,1,function(x) sqrt(sum((x-grid.points[y,])^2)) ))
   delta.s0 <- sapply(1:nrow(grid.points), function(y) t(apply(coords,1,function(x) x-grid.points[y,])), simplify = F)
   
-  if(Sys.info()$sysname == "windows"){
+  if(sysinfo["sysname"] == "windows"){
+    cl <- makeCluster(ncores)
     registerDoParallel(cores = ncores)
     if(cov.type == "gaussian"){
       results.grad <- foreach(x = parallel.index) %do% {
@@ -136,9 +138,9 @@ spatial_gradient <- function(coords = NULL,
                               5 * phi.grad.est^4/3,
                               5 * phi.grad.est^4))
             nabla.K.t <- t(5 * cbind(phi.grad.est^2 * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]) * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
-                                   - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
-                                   5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1]*delta.s0[[i]][,2],
-                                   - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]- 5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3)
+                                     - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
+                                     5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1]*delta.s0[[i]][,2],
+                                     - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]- 5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3)
             
             tmp <- t(crossprod(t(nabla.K.t),s.grad.in))
             mean.grad <- crossprod(tmp,z.grad.est)
@@ -189,6 +191,8 @@ spatial_gradient <- function(coords = NULL,
         return(mcmc.grad)
       }
     }else{stop("Enter valid covariance! Choices are:: gaussian, matern1, matern2!")}
+    
+    stopCluster(cl)
     
   }else{
     if(cov.type == "gaussian"){
@@ -332,7 +336,7 @@ spatial_gradient <- function(coords = NULL,
     }else print("Error:: Enter valid covariance")
     
   }
-
+  
   
   if(cov.type=="matern1"){
     grad.s1.temp <- grad.s2.temp <- c()
@@ -410,6 +414,9 @@ spatial_gradient <- function(coords = NULL,
     grad.s11.hpd <- data.frame(round(cbind(grad.s11.est, HPDinterval(grad.s11.mcmc)),4))
     grad.s12.hpd <- data.frame(round(cbind(grad.s12.est, HPDinterval(grad.s12.mcmc)),4))
     grad.s22.hpd <- data.frame(round(cbind(grad.s22.est, HPDinterval(grad.s22.mcmc)),4))
+    
+    
+    
     
     if(return.mcmc){
       return(list(grad1.est=grad.s1.hpd, #gradient

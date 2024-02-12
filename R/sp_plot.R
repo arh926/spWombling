@@ -121,7 +121,7 @@ sp_plot <- function(col.seq.length=NULL,
     }
     if(contour.plot) contour(surf, add = TRUE, lwd = 0.1)
     if(points.plot){
-      points(data_frame[,(1:2)], pch = 16, cex = 0.5)
+      points(data_frame[,(1:2)], pch = 16, cex = points.cex)
       if(!is.null(sig)){
         points(data_frame[,(1:2)],
                col=sapply(sig, function(x){

@@ -13,7 +13,7 @@ spatial_gradient(
   niter = NULL,
   nbatch = 200,
   nburn = NULL,
-  return.mcmc = T
+  return.mcmc = TRUE
 )
 }
 \arguments{
