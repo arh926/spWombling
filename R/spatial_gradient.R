@@ -56,6 +56,9 @@ spatial_gradient <- function(coords = NULL,
     
     if(cov.type == "gaussian"){
       results.grad <- foreach(x = parallel.index) %dopar% {
+        require(MASS)
+        require(Matrix)
+        
         samp.x <- samp.list[[x]]
         post_phi_thin <- chain$parameters$post_phis[samp.x]
         post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
@@ -103,7 +106,10 @@ spatial_gradient <- function(coords = NULL,
         return(mcmc.grad)
       }
     }else if(cov.type == "matern2"){
-      results.grad <- foreach(x = parallel.index) %do% {
+      results.grad <- foreach(x = parallel.index) %dopar% {
+        require(MASS)
+        require(Matrix)
+        
         samp.x <- samp.list[[x]]
         post_phi_thin <- chain$parameters$post_phis[samp.x]
         post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
@@ -155,7 +161,10 @@ spatial_gradient <- function(coords = NULL,
         return(mcmc.grad)
       }
     }else if(cov.type == "matern1"){
-      results.grad <- foreach(x = parallel.index) %do% {
+      results.grad <- foreach(x = parallel.index) %dopar% {
+        require(MASS)
+        require(Matrix)
+        
         samp.x <- samp.list[[x]]
         post_phi_thin <- chain$parameters$post_phis[samp.x]
         post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
