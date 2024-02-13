@@ -53,6 +53,7 @@ spatial_gradient <- function(coords = NULL,
     
     cl <- makeCluster(ncores)
     registerDoParallel(cores = ncores)
+    
     if(cov.type == "gaussian"){
       results.grad <- foreach(x = parallel.index) %dopar% {
         samp.x <- samp.list[[x]]
