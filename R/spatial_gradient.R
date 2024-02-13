@@ -54,7 +54,7 @@ spatial_gradient <- function(coords = NULL,
     cl <- makeCluster(ncores)
     registerDoParallel(cores = ncores)
     if(cov.type == "gaussian"){
-      results.grad <- foreach(x = parallel.index) %do% {
+      results.grad <- foreach(x = parallel.index) %dopar% {
         samp.x <- samp.list[[x]]
         post_phi_thin <- chain$parameters$post_phis[samp.x]
         post_sigma2_thin <- chain$parameters$post_sigma2[samp.x]
