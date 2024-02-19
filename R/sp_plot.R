@@ -44,12 +44,17 @@ sp_plot <- function(col.seq.length=NULL,
                     points.plot = FALSE,
                     points.cex = 0.3,
                     contour.plot = FALSE,
-                    legend = TRUE,
+                    legend = TRUE, digits = "%2f",
                     raster.surf = FALSE,
+                    extend = FALSE,
                     sig = NULL,
                     grid = FALSE){
+  
+  if(is.null(col.seq.length)) col.seq.length = 11
+  if(is.null(col.text)) col.text = "Spectral"
+  
   col.br <- colorRampPalette(brewer.pal(col.seq.length,col.text))
-  surf <- mba.surf(data_frame, no.X = 300, no.Y = 300, extend = TRUE, sp = TRUE)$xyz.est 
+  surf <- mba.surf(data_frame, no.X = 300, no.Y = 300, extend = extend, sp = TRUE)$xyz.est 
   
   if(legend){
     # mat <- matrix(c(1:2), nr=1,nc=2, byrow=TRUE)
@@ -60,7 +65,7 @@ sp_plot <- function(col.seq.length=NULL,
     else{
       legend_image <- as.raster(matrix(col.br(100), ncol = 1))
       plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
-      text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf("%.4f", round(seq(min(data_frame[, 3]), max(data_frame[, 3]),l = 6), 2)))
+      text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(min(data_frame[, 3]), max(data_frame[, 3]),l = 6), 2)))
       rasterImage(legend_image, 0, 0, 1, 1)
     }
     if(categorical){
