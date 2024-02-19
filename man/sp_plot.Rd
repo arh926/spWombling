@@ -19,7 +19,7 @@ sp_plot(
   points.cex = 0.3,
   contour.plot = FALSE,
   legend = TRUE,
-  digits = "\%2f",
+  digits = "\%.2f",
   raster.surf = FALSE,
   extend = FALSE,
   sig = NULL,
