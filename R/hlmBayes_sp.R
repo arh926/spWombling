@@ -166,7 +166,7 @@ hlmBayes_sp <- function(coords = NULL,
       Sig.Z <- chol2inv(chol(Sig.Z.in))
       if(replication) mu.Z <- crossprod(Sig.Z,aggregate(as.vector(y-crossprod(t(X),beta)),list(D),sum)[,2])/tau2
       else mu.Z <- crossprod(Sig.Z,as.vector(y-crossprod(t(X),beta)))/tau2
-      Z <- crossprod(chol(Sig.Z),rnorm(L))+mu.Z
+      Z <- crossprod(chol(Sig.Z),rnorm(L)) + mu.Z
       res_z[i,] <- z <- as.vector(t(Z)) - mean(Z) # change here
       
       # update sigma
