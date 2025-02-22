@@ -14,9 +14,9 @@ Encoding: UTF-8
 Language: es
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports: stats, coda, MASS, Matrix, parallel, sp, fields, MBA,
-        latex2exp, RColorBrewer, raster, graphics, grDevices, doParallel
+        latex2exp, RColorBrewer, raster, graphics, grDevices, doParallel, magic
 NeedsCompilation: no
 Packaged: 2023-01-26 08:26:51 UTC; aritrah
 Author: Aritra Halder [aut, cre] (<https://orcid.org/0000-0002-5139-3620>)

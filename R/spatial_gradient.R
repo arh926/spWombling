@@ -17,7 +17,7 @@
 #' @importFrom MASS mvrnorm
 #' @importFrom Matrix Matrix
 #' @importFrom Matrix forceSymmetric
-#' @import parallel doParallel
+#' @import parallel doParallel magic
 #' @keywords 
 #' @export
 #' @examples
@@ -44,6 +44,16 @@ spatial_gradient <- function(coords = NULL,
   ncores <- numCores-1
   parallel.index <- 1:ncores
   samp.list <- split(samples, ceiling(seq_along(samples)/(length(samples)/ncores)))
+  
+  ################################
+  # Configurations and constants #
+  ################################
+  I.d = diag(2)
+  I.tilde = matrix(c(3, 0, 1,
+                     0, 1, 0,
+                     1, 0, 3),
+                   nrow = 3, ncol = 3, byrow = TRUE)
+  I.star = c(1, 0, 1)
   
   
   dist.s0 <- sapply(1:nrow(grid.points),function(y) apply(coords,1,function(x) sqrt(sum((x-grid.points[y,])^2)) ))
@@ -85,11 +95,13 @@ spatial_gradient <- function(coords = NULL,
                              -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 1]^2), # -ve curvature-11
                              4 * phi.grad.est^2 * sig2.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * delta.s0[[i]][,1] * delta.s0[[i]][, 2], # -ve curvature-12
                              -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[,i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 2]^2)) #-ve curvature-22
-            V.0 <- sig2.grad.est * diag(c(2 * phi.grad.est,
-                                          2 * phi.grad.est,
-                                          12 * phi.grad.est^2,
-                                          4 * phi.grad.est^2,
-                                          12 * phi.grad.est^2))
+            V.0 <- sig2.grad.est * adiag(2 * phi.grad.est^2 * I.d,
+                                         4 * phi.grad.est^4 * I.tilde)
+              # diag(c(2 * phi.grad.est,
+              #                             2 * phi.grad.est,
+              #                             12 * phi.grad.est^2,
+              #                             4 * phi.grad.est^2,
+              #                             12 * phi.grad.est^2))
             nabla.K.t <- t(cbind(2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * delta.s0[[i]], # gradient
                                  -2 * sig2.grad.est * phi.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * (1 - 2 * phi.grad.est * delta.s0[[i]][, 1]^2), # -ve curvature-11
                                  4 * phi.grad.est^2 * sig2.grad.est * exp(-phi.grad.est * dist.s0[, i]^2) * delta.s0[[i]][,1] * delta.s0[[i]][, 2], # -ve curvature-12
@@ -140,11 +152,14 @@ spatial_gradient <- function(coords = NULL,
                                  -phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est*dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
                                  5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1] * delta.s0[[i]][,2],
                                  -phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3
-            V.0 <- 5 * diag(c(phi.grad.est^2/3,
-                              phi.grad.est^2/3,
-                              5 * phi.grad.est^4,
-                              5 * phi.grad.est^4/3,
-                              5 * phi.grad.est^4))
+            V.0 <- adiag(5/3 * phi.grad.est^2 * I.d,
+                         25/3 * phi.grad.est^4 * I.tilde) 
+              
+              # 5 * diag(c(phi.grad.est^2/3,
+              #                 phi.grad.est^2/3,
+              #                 5 * phi.grad.est^4,
+              #                 5 * phi.grad.est^4/3,
+              #                 5 * phi.grad.est^4))
             nabla.K.t <- t(5 * cbind(phi.grad.est^2 * (1 + sqrt(5) * phi.grad.est * dist.s0[,i]) * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
                                      - phi.grad.est^2 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * (1 + sqrt(5) * phi.grad.est * dist.s0[,i] - 5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
                                      5 * phi.grad.est^4 * exp(-sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1]*delta.s0[[i]][,2],
@@ -234,11 +249,13 @@ spatial_gradient <- function(coords = NULL,
                              -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
                              4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
                              -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,2]^2)) #-ve curvature-22
-            V.0 <- sig2.grad.est*diag(c(2*phi.grad.est,
-                                        2*phi.grad.est,
-                                        12*phi.grad.est^2,
-                                        4*phi.grad.est^2,
-                                        12*phi.grad.est^2))
+            V.0 <- sig2.grad.est * adiag(2 * phi.grad.est^2 * I.d,
+                                         4 * phi.grad.est^4 * I.tilde)
+            # V.0 <- sig2.grad.est*diag(c(2*phi.grad.est,
+            #                             2*phi.grad.est,
+            #                             12*phi.grad.est^2,
+            #                             4*phi.grad.est^2,
+            #                             12*phi.grad.est^2))
             nabla.K.t <- t(cbind(2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]], # gradient
                                  -2*sig2.grad.est*phi.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*(1-2*phi.grad.est*delta.s0[[i]][,1]^2), # -ve curvature-11
                                  4*phi.grad.est^2*sig2.grad.est*exp(-phi.grad.est*dist.s0[,i]^2)*delta.s0[[i]][,1]*delta.s0[[i]][,2], # -ve curvature-12
@@ -324,11 +341,13 @@ spatial_gradient <- function(coords = NULL,
                                -phi.grad.est^2 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
                                5*phi.grad.est^4 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],
                                -phi.grad.est^2 * exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,2]^2))/3
-            V.0 <- 5*diag(c(phi.grad.est^2/3,
-                            phi.grad.est^2/3,
-                            5*phi.grad.est^4,
-                            5*phi.grad.est^4/3,
-                            5*phi.grad.est^4))
+            V.0 <- adiag(5/3 * phi.grad.est^2 * I.d,
+                         25/3 * phi.grad.est^4 * I.tilde) 
+            # V.0 <- 5*diag(c(phi.grad.est^2/3,
+            #                 phi.grad.est^2/3,
+            #                 5*phi.grad.est^4,
+            #                 5*phi.grad.est^4/3,
+            #                 5*phi.grad.est^4))
             nabla.K.t <- t(5*cbind(phi.grad.est^2*(1+sqrt(5)*phi.grad.est*dist.s0[,i])*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]],
                                    -phi.grad.est^2*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*(1+sqrt(5)*phi.grad.est*dist.s0[,i]-5*phi.grad.est^2*delta.s0[[i]][,1]^2),
                                    5*phi.grad.est^4*exp(-sqrt(5)*phi.grad.est*dist.s0[,i])*delta.s0[[i]][,1]*delta.s0[[i]][,2],

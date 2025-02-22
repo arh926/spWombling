@@ -55,7 +55,7 @@ sp_plot <- function(col.seq.length=NULL,
   
   col.br <- colorRampPalette(brewer.pal(col.seq.length,col.text))
   surf <- mba.surf(data_frame, no.X = 300, no.Y = 300, extend = extend, sp = TRUE)$xyz.est 
-  
+  par(mar = c(1.5, 1.5, 1.5, 1.5))
   if(legend){
     # mat <- matrix(c(1:2), nr=1,nc=2, byrow=TRUE)
     # layout(mat,
@@ -63,10 +63,17 @@ sp_plot <- function(col.seq.length=NULL,
     #        heights = c(3,3))
     if(min(data_frame[,3]) == max(data_frame[,3])) plot.new()
     else{
-      legend_image <- as.raster(matrix(col.br(100), ncol = 1))
-      plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
-      text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(min(data_frame[, 3]), max(data_frame[, 3]),l = 6), 2)))
-      rasterImage(legend_image, 0, 0, 1, 1)
+      if(is.null(zlim)){
+        legend_image <- as.raster(matrix(col.br(100), ncol = 1))
+        plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
+        text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(min(data_frame[, 3]), max(data_frame[, 3]),l = 6), 2)))
+        rasterImage(legend_image, 0, 0, 1, 1)
+      }else{
+        legend_image <- as.raster(matrix(col.br(100), ncol = 1))
+        plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
+        text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(zlim[1], zlim[2],l = 6), 2)))
+        rasterImage(legend_image, 0, 0, 1, 1)
+      }
     }
     if(categorical){
       col.br <- brewer.pal(col.seq.length,col.text)

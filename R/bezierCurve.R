@@ -5,10 +5,9 @@
 #' @param x x-coordinate for points
 #' @param y y-coordinate for points
 #' @param n number of points to interpolate
-#' @keywords 
+#' @keywords spWombling
 #' @import stats
-#' @export
-#' @examples 
+
 ##############################################
 # Bezier Splines for Annotated set of points #
 ##############################################

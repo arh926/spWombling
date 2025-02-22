@@ -32,11 +32,10 @@
 #' @param nburn number of burn-in samples
 #' @param report batch length
 #' @param cov.type covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})
-#' @keywords 
-#' @import stats
-#' @importFrom MASS mvrnorm
+#' @keywords spWombling
+#' @import stats Matrix
+#' @importFrom MASS mvrnorm 
 #' @export
-#' @examples 
 ##################################################################
 ### Hierarchical Bayesian spatial model: point referenced data ###
 ##################################################################
@@ -153,7 +152,7 @@ hlmBayes_sp <- function(coords = NULL,
     # update beta
     post_sd_beta <- chol2inv(chol(prec_beta+XtX/tau2))
     post_mean_beta <- post_sd_beta%*%(prec_beta%*%mean_beta+crossprod(X,y-z[D])/tau2)
-    res_beta[i,] <- beta <- as.vector(MASS::mvrnorm(1,post_mean_beta,post_sd_beta))
+    res_beta[i,] <- beta <- as.vector(mvrnorm(1,post_mean_beta,post_sd_beta))
     
     # update tau
     post_shape_tau <- shape_tau+N/2
