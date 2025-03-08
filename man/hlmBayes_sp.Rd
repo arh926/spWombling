@@ -5,74 +5,27 @@
 \title{A spatial hierarchical Bayes Markov Chain Monte Carlo sampler}
 \usage{
 hlmBayes_sp(
-  coords = NULL,
   y = NULL,
-  X = NULL,
-  z_init = NULL,
-  D = NULL,
-  phis_init = NULL,
-  lower_phis = NULL,
-  upper_phis = NULL,
-  sigma2_init = NULL,
-  shape_sigma = NULL,
-  scale_sigma = NULL,
-  tau2_init = NULL,
-  shape_tau = NULL,
-  scale_tau = NULL,
-  beta_init = NULL,
-  mean_beta = NULL,
-  prec_beta = NULL,
-  steps_init = NULL,
+  coords = NULL,
   niter = NULL,
   nburn = NULL,
   report = NULL,
-  cov.type = c("exponential", "gaussian", "matern1", "matern2"),
-  spatial.rand.effect = T,
-  replication = F,
-  verbose = T,
-  nu_est = F,
-  stepnu_init = NULL,
-  nu_init = NULL,
-  lower_nu = NULL,
-  upper_nu = NULL
+  a.sigma = NULL,
+  b.sigma = NULL,
+  a.tau = NULL,
+  b.tau = NULL,
+  lower.phi = NULL,
+  upper.phi = NULL,
+  cov.type = NULL,
+  verbose = TRUE,
+  trgtFn.compute = FALSE,
+  digits = 3
 )
 }
 \arguments{
-\item{coords}{coordinates for observed process (order \eqn{L} x \eqn{2})}
-
 \item{y}{observed response (order \eqn{L} x  \eqn{1})}
 
-\item{X}{a matrix of covariates (order \eqn{L} x  \eqn{p})}
-
-\item{z_init}{starting values of spatial effects (order \eqn{L} x  \eqn{1})}
-
-\item{D}{(use if replication at co-ordinate level) index for observations}
-
-\item{phis_init}{starting value for \eqn{\phi}}
-
-\item{lower_phis}{lower bound for uniform prior on \eqn{\phi}}
-
-\item{upper_phis}{upper bound for uniform prior on \eqn{\phi}}
-
-\item{sigma2_init}{starting value for \eqn{\phi}}
-
-\item{shape_sigma}{lower bound for uniform prior on \eqn{\phi}}
-
-\item{scale_sigma}{upper bound for uniform prior on \eqn{\phi}}
-
-\item{tau2_init}{starting value for \eqn{\phi}}
-
-\item{shape_tau}{lower bound for uniform prior on \eqn{\phi}}
-
-\item{scale_tau}{upper bound for uniform prior on \eqn{\phi}}
-
-\item{beta_init}{starting value for \eqn{\phi}}
-
-\item{mean_beta}{lower bound for uniform prior on \eqn{\phi}}
-
-\item{prec_beta}{upper bound for uniform prior on \eqn{\phi}}
-
-\item{steps_init}{tuning parameter for \eqn{\phi}}
+\item{coords}{coordinates for observed process (order \eqn{L} x \eqn{2})}
 
 \item{niter}{number of MCMC iterations}
 
@@ -80,24 +33,27 @@ hlmBayes_sp(
 
 \item{report}{batch length}
 
+\item{a.sigma}{shape parameter for inverse-gamma prior on \eqn{\sigma^2}}
+
+\item{b.sigma}{scale parameter for inverse-gamma prior on \eqn{\sigma^2}}
+
+\item{a.tau}{shape parameter for inverse-gamma prior on \eqn{\tau^2}}
+
+\item{b.tau}{scale parameter for inverse-gamma prior on \eqn{\tau^2}}
+
+\item{lower.phi}{lower limit for uniform prior on \eqn{\phi}}
+
+\item{upper.phi}{upper limit for uniform prior on \eqn{\phi}}
+
 \item{cov.type}{covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
-
-\item{spatial.rand.effect}{if false perform linear regression}
-
-\item{replication}{refer to parameter D above}
 
 \item{verbose}{if true prints output for batches}
 
-\item{nu_est}{(if cov.type not specified turns to true) smoothness parameter for Mat\'ern}
+\item{trgtFn.compute}{compute posterior}
 
-\item{stepnu_init}{tuning parameter for \eqn{\nu}}
-
-\item{nu_init}{starting value for \eqn{\nu}}
-
-\item{lower_nu}{lower bound for uniform prior on \eqn{\nu}}
-
-\item{upper_nu}{upper bound for uniform prior on \eqn{\nu}}
+\item{digits}{rounding digits}
 }
 \description{
 Fits a univariate Gaussian spatial regression model: \eqn{Y(s)=x(s)^T\beta+Z(s)+\epsilon}. Parameters not listed are optional.
 }
+\keyword{spWombling}

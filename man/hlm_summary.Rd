@@ -4,25 +4,20 @@
 \alias{hlm_summary}
 \title{Model Summary for spatial hierarchical Bayes models}
 \usage{
-hlm_summary(
-  chain = NULL,
-  nburn = NULL,
-  niter = NULL,
-  thin = NULL,
-  latent_inf = T
-)
+hlm_summary(sig2 = NULL, tau2 = NULL, phi = NULL, beta = NULL, z = NULL)
 }
 \arguments{
-\item{chain}{MCMC posterior samples}
+\item{sig2}{MCMC posterior samples for \eqn{\sigma^2}}
 
-\item{nburn}{number of burn-in samples}
+\item{tau2}{MCMC posterior samples for \eqn{\tau^2}}
 
-\item{niter}{number of MCMC iterations}
+\item{phi}{MCMC posterior samples for \eqn{\phi}}
 
-\item{thin}{thinning interval}
+\item{beta}{MCMC posterior samples for \eqn{\beta}}
 
-\item{latent_inf}{if true returns inference for spatial effects \eqn{Z}}
+\item{z}{MCMC posterior samples for \eqn{Z}}
 }
 \description{
 Provides a model summary for fitted hlmBayes_sp models
 }
+\keyword{hlm_summary}

@@ -6,32 +6,23 @@
 \usage{
 spatial_gradient(
   coords = NULL,
-  chain = NULL,
-  cov.type = c("gaussian", "matern1", "matern2"),
+  model = NULL,
+  cov.type = c("matern1", "matern2", "gaussian", ),
   grid.points = NULL,
-  samples = NULL,
-  niter = NULL,
   nbatch = 200,
-  nburn = NULL,
   return.mcmc = TRUE
 )
 }
 \arguments{
 \item{coords}{coordinates for observed process (order \eqn{L} x \eqn{2})}
 
-\item{chain}{the posterior samples from the MCMC fit}
+\item{model}{the posterior samples from the MCMC fit}
 
-\item{cov.type}{covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
+\item{cov.type}{covariance type (three available choices: Gaussian,  Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
 
 \item{grid.points}{coordinates for grid over observed process (order \eqn{n_G} x \eqn{2})}
 
-\item{samples}{index of samples from the chain to be used}
-
-\item{niter}{number of MCMC iterations}
-
 \item{nbatch}{number of batches}
-
-\item{nburn}{number of burn-in samples}
 
 \item{return.mcmc}{if true returns mcmc samples of gardients}
 }

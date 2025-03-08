@@ -1,231 +1,93 @@
-#' Spatial Plots
-#'
-#' A function that plots a kriged spatial field from coordinates.
-#'
-#' @param col.seq.length length of colors in color pallate
-#' @param col.text names of color pallate
-#' @param data_frame a matrix of coordinates and response (order \eqn{L} x  \eqn{3})
-#' @param shape shape file for respone if available
-#' @param zlim upper limit for response (optional)
-#' @param xlab (Plotting parameter) label for x-axis
-#' @param ylab (Plotting parameter) label for y-axis
-#' @param lab (Plotting parameter) label for z-axis
-#' @param add if plot needs to be added to an existing plot
-#' @param categorical if response is cateforgical
-#' @param points.plot if true plots points
-#' @param contour.plot if true plots contours
-#' @param legend if true plots legend
-#' @param raster.surf if true returns a raster object of surface
-#' @param sig vector of colors indicating significance for points (order \eqn{L} x \eqn{1})
-#' @param grid if true plots grid
-#' @keywords 
-#' @import graphics
-#' @import grDevices
-#' @import stats
-#' @import sp 
-#' @import latex2exp
-#' @importFrom RColorBrewer brewer.pal
-#' @importFrom fields image.plot
-#' @importFrom raster raster
-#' @importFrom MBA mba.surf
-#' @importFrom MASS mvrnorm
-#' @export
-#' @examples 
-sp_plot <- function(col.seq.length=NULL, 
-                    col.text = NULL, 
-                    data_frame = NULL, 
-                    shape = NULL,
-                    zlim = NULL,
-                    xlab = NULL,
-                    ylab = NULL,
-                    lab = NULL,
-                    add = FALSE,
-                    categorical = FALSE,
-                    points.plot = FALSE,
-                    points.cex = 0.3,
-                    contour.plot = FALSE,
-                    legend = TRUE, digits = "%.2f",
-                    raster.surf = FALSE,
-                    extend = FALSE,
-                    sig = NULL,
-                    grid = FALSE){
+#' Spatial Plot Function
+#' 
+#' @param data_frame data frame consisting of coordinates and data
+#' @param sp logical parameter indicating whether to make a spatial plot
+#' @param shape if sp = TRUE shape file should be provided (should be an sf object) 
+#' @param palette (optional) color palette
+#' @keywords sp_plot
+#' @import ggplot2 cowplot MBA metR sf
+sp_ggplot <- function(data_frame = NULL, 
+                      sp = FALSE,
+                      shape = NULL,
+                      palette = "Spectral"){
   
-  if(is.null(col.seq.length)) col.seq.length = 11
-  if(is.null(col.text)) col.text = "Spectral"
-  
-  col.br <- colorRampPalette(brewer.pal(col.seq.length,col.text))
-  surf <- mba.surf(data_frame, no.X = 300, no.Y = 300, extend = extend, sp = TRUE)$xyz.est 
-  par(mar = c(1.5, 1.5, 1.5, 1.5))
-  if(legend){
-    # mat <- matrix(c(1:2), nr=1,nc=2, byrow=TRUE)
-    # layout(mat,
-    #        widths = rep(c(5,3),4),
-    #        heights = c(3,3))
-    if(min(data_frame[,3]) == max(data_frame[,3])) plot.new()
-    else{
-      if(is.null(zlim)){
-        legend_image <- as.raster(matrix(col.br(100), ncol = 1))
-        plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
-        text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(min(data_frame[, 3]), max(data_frame[, 3]),l = 6), 2)))
-        rasterImage(legend_image, 0, 0, 1, 1)
-      }else{
-        legend_image <- as.raster(matrix(col.br(100), ncol = 1))
-        plot(c(0, 3), c(0, 1), type = 'n', axes = FALSE, xlab = '', ylab = '', main = '')
-        text(x = 2, y = seq(0.01, 0.99, l = 6), labels = sprintf(digits, round(seq(zlim[1], zlim[2],l = 6), 2)))
-        rasterImage(legend_image, 0, 0, 1, 1)
-      }
-    }
-    if(categorical){
-      col.br <- brewer.pal(col.seq.length,col.text)
-      surf$z <- round(surf$z)
-    } 
-    if(!is.null(shape)){
-      proj4string(surf) <- proj4string(shape)
-      surf.tmp <- try(surf[!is.na(over(surf,shape))[,1],], silent = TRUE)
-      if(class(surf.tmp) == "try-error")  surf <- surf[!is.na(over(surf,shape)),] else surf <- surf.tmp
-      surf <- as.image.SpatialGridDataFrame(surf)
-    }
-    if(is.null(zlim)) zlim <- range(surf[["z"]], na.rm = TRUE)
-    if(!is.null(shape)){
-      if(categorical){
-        image.plot(surf, xaxs = "i", yaxs = "i",
-                   col = rev(col.br), axes = TRUE,#
-                   zlim = zlim,
-                   xlim = shape@bbox["x",],
-                   ylim = shape@bbox["y",],
-                   xlab = TeX("Longitude$\\degree$"),
-                   ylab = TeX("Latitude$\\degree$"),
-                   legend.lab = lab,
-                   add = add)
-      }else{
-        if(!is.null(xlab) & !is.null(ylab)){
-          image(surf, xaxs = "i", yaxs = "i",col = rev(col.br(100)), axes = TRUE,
-                zlim = zlim,
-                xlim = shape@bbox["x",],
-                ylim = shape@bbox["y",],
-                xlab = xlab,
-                ylab = ylab,
-                legend.lab = lab,
-                add = add)
-        }else{
-          image(surf, xaxs="i", yaxs="i",
-                col = rev(col.br(100)), axes = TRUE,
-                zlim = zlim,
-                xlim = shape@bbox["x",],
-                ylim = shape@bbox["y",],
-                xlab = "",#latex2exp::TeX("Longitude$\\degree$"),
-                ylab = "",#latex2exp::TeX("Latitude$\\degree$"),
-                legend.lab = lab,
-                add = add)
-        }
-      }
-    }else{
-      image(surf, xaxs = "i", yaxs = "i", col = rev(col.br(100)), axes = TRUE,
-            zlim = zlim,
-            xlab = xlab,#latex2exp::TeX("Longitude$\\degree$"),
-            ylab = ylab,#latex2exp::TeX("Latitude$\\degree$"),
-            legend.lab = lab,
-            add = add)
-    }
-    
-    if(!is.null(shape)){
-      plot(shape, add = TRUE, lwd = 0.4)
-    }
-    if(contour.plot) contour(surf, add = TRUE, lwd = 0.1)
-    if(points.plot){
-      points(data_frame[,(1:2)], pch = 16, cex = points.cex)
-      if(!is.null(sig)){
-        points(data_frame[,(1:2)],
-               col=sapply(sig, function(x){
-                 if(x == 0) return("white")
-                 if(x == -1) return("cyan")
-                 else return("green")
-               }), pch = 16, cex = points.cex)
-      }
-    } 
-    if(grid){
-      abline(h=data_frame[,2],lwd=0.01)
-      abline(v=data_frame[,1],lwd=0.01)
-    }
-    
-    if(raster.surf) return(raster(surf))
+  if(sp & is.null(shape)) stop("Please provide a shape file!")
+  if(ncol(data_frame) == 4){
+    col.pt = sapply(data_frame[,4], function(x){
+      if(x == 0) return(NA)
+      else if(x == 1) return("green")
+      else return("cyan")
+    })
+    color.pt = ifelse(is.na(col.pt), NA, "black")
   }else{
-    if(categorical){
-      col.br <- brewer.pal(col.seq.length, col.text)
-      surf$z <- round(surf$z)
-    } 
-    #browser()
-    if(!is.null(shape)){
-      proj4string(surf) <- proj4string(shape)
-      surf.tmp <- try(surf[!is.na(over(surf,shape))[,1],],silent = TRUE)
-      if(class(surf.tmp)=="try-error")  surf <- surf[!is.na(over(surf,shape)),] else surf <- surf.tmp
-      surf <- as.image.SpatialGridDataFrame(surf)
-    }
-    if(is.null(zlim)) zlim <- range(surf[["z"]],na.rm=TRUE)
-    if(!is.null(shape)){
-      if(categorical){
-        image.plot(surf, xaxs = "i", yaxs = "i",
-                   col=rev(col.br), axes = TRUE,#
-                   zlim = zlim,
-                   xlim = shape@bbox["x",],
-                   ylim = shape@bbox["y",],
-                   xlab = TeX("Longitude$\\degree$"),
-                   ylab = TeX("Latitude$\\degree$"),
-                   legend.lab = lab,
-                   add = add)
-      }else{
-        if(!is.null(xlab) & !is.null(ylab)){
-          image(surf, xaxs = "i", yaxs = "i", 
-                col = rev(col.br(100)), axes = TRUE,
-                zlim = zlim,
-                xlim = shape@bbox["x",],
-                ylim = shape@bbox["y",],
-                xlab = xlab,
-                ylab = ylab,
-                legend.lab = lab,
-                add = add)
-        }else{
-          image(surf, xaxs = "i", yax = "i",
-                col = rev(col.br(100)), axes = TRUE,
-                zlim = zlim,
-                xlim = shape@bbox["x",],
-                ylim = shape@bbox["y",],
-                xlab = "",#latex2exp::TeX("Longitude$\\degree$"),
-                ylab = "",#latex2exp::TeX("Latitude$\\degree$"),
-                legend.lab = lab,
-                add = add)
-        }
-      }
-    }else{
-      image(surf, xaxs = "i", yaxs = "i",
-            col = rev(col.br(100)), axes = TRUE,
-            zlim = zlim,
-            xlab = xlab,#latex2exp::TeX("Longitude$\\degree$"),
-            ylab = ylab,#latex2exp::TeX("Latitude$\\degree$"),
-            legend.lab = lab,
-            add = add)
-    }
-    
-    if(!is.null(shape)){
-      plot(shape, add = TRUE, lwd = 0.4)
-    }
-    if(points.plot){
-      if(!is.null(sig)){
-        points(data_frame[,(1:2)],
-               col = sapply(sig, function(x){
-                 if(x == 0) return("white")
-                 if(x == -1) return("cyan")
-                 else return("green")
-               }), pch = 16, cex = points.cex)
-      }else{
-        points(data_frame[,(1:2)], pch = 16,  cex = points.cex)
-      }
-    }
-    if(grid){
-      abline(h = data_frame[,2],lwd = 0.01)
-      abline(v = data_frame[,1],lwd = 0.01)
-    }
-    if(contour.plot) contour(surf, add = TRUE, lwd = 0.1)
-    if(raster.surf) return(raster(surf))
+    col.pt = color.pt = rep("black", nrow(data_frame))
   }
+  
+  
+  cnames = colnames(data_frame)[1:3]
+  coords = data.frame(data_frame[, c(1, 2)])
+  surf = mba.surf(data_frame[,1:3],
+                  no.X = 300,
+                  no.Y = 300,
+                  h = 5,
+                  m = 2,
+                  extend = TRUE, sp = sp)$xyz.est
+  
+  if(sp){
+    proj4string(surf) = proj4string(shape)
+    surf.tmp = try(surf[!is.na(over(surf, shape))[, 1],], silent = TRUE)
+    surf = as.image.SpatialGridDataFrame(surf.tmp)
+  }
+  
+  gg.grid = expand.grid(surf$x, surf$y)
+  
+  df.gg = cbind(gg.grid, as.vector(surf$z))
+  colnames(df.gg) = cnames
+  
+  if(sp){
+    gplot = ggplot() + theme_cowplot(12) +
+      geom_raster(data = df.gg, mapping = aes_string(x = cnames[1], y = cnames[2], fill = cnames[3])) +
+      labs(x = cnames[1], y = cnames[2], fill = "") +
+      scale_fill_distiller(palette = palette,
+                           label = function(x) sprintf("%.2f", x), na.value = "white", direction = 1) +
+      geom_contour2(data = df.gg,
+                    mapping = aes_string(x = cnames[1], y = cnames[2], z = cnames[3], label = "after_stat(level)"), 
+                    linewidth = 0.1,
+                    label_size = 2.5) +
+      geom_sf(data = shape, fill = "transparent") +
+      geom_point(data = coords,
+                 mapping = aes_string(x = cnames[1], y = cnames[2]),
+                 size = 1.2, color = color.pt,
+                 fill = col.pt,  stroke = 0.5, pch = 21, na.rm = TRUE) +
+      theme(axis.line = element_line(linewidth = 0.2),
+            axis.title = element_text(size = 15),
+            axis.text = element_text(size = 10),
+            legend.key.height = unit(1.5, "cm"),
+            legend.key.width = unit(0.6, "cm"),
+            legend.text = element_text(size = 20),
+            plot.margin = unit(rep(0.15, 4), "cm"))
+  }else{
+    gplot = ggplot() + theme_cowplot(12) +
+      geom_raster(data = df.gg, mapping = aes_string(x = cnames[1], y = cnames[2], fill = cnames[3])) +
+      labs(x = cnames[1], y = cnames[2], fill = "") +
+      scale_fill_distiller(palette = palette,
+                           label = function(x) sprintf("%.2f", x), na.value = "white", direction = 1) +
+      geom_contour2(data = df.gg,
+                    mapping = aes_string(x = cnames[1], y = cnames[2], z = cnames[3], label = "after_stat(level)"), 
+                    linewidth = 0.1,
+                    label_size = 2.5) +
+      geom_point(data = coords,
+                 mapping = aes_string(x = cnames[1], y = cnames[2]),
+                 size = 1.2, color = color.pt,
+                 fill = col.pt,  stroke = 0.5, pch = 21, na.rm = TRUE) +
+      theme(axis.line = element_line(linewidth = 0.2),
+            axis.title = element_text(size = 15),
+            axis.text = element_text(size = 10),
+            legend.key.height = unit(1.5, "cm"),
+            legend.key.width = unit(0.6, "cm"),
+            legend.text = element_text(size = 20),
+            plot.margin = unit(rep(0.15, 4), "cm"))
+  }
+ 
+  return(gplot)
 }

@@ -6,10 +6,8 @@
 \usage{
 bayes_cwomb(
   coords = NULL,
-  chain = NULL,
+  model = NULL,
   cov.type = c("gaussian", "matern1", "matern2"),
-  niter = NULL,
-  nburn = NULL,
   nbatch = NULL,
   curve = NULL,
   type = c("rectilinear", "riemann.sum"),
@@ -21,13 +19,9 @@ bayes_cwomb(
 \arguments{
 \item{coords}{coordinates for observed process (order \eqn{L} x \eqn{2})}
 
-\item{chain}{the posterior samples from the MCMC fit}
+\item{model}{the posterior samples from the MCMC fit}
 
 \item{cov.type}{covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})}
-
-\item{niter}{number of iterations for the chain}
-
-\item{nburn}{number of burn-in samples}
 
 \item{nbatch}{number of batches}
 

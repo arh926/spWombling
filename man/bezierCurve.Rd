@@ -16,3 +16,4 @@ bezierCurve(x, y, n = 10)
 \description{
 A function for computing Bezier splines from a set of annotated points
 }
+\keyword{spWombling}
