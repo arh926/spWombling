@@ -134,7 +134,7 @@ spatial_gradient = function(coords = NULL,
             
             # matern2 covariance
             nabla.K = 5 * cbind( - phi.grad.est^2 * (1  +   sqrt(5) * phi.grad.est * dist.s0[,i]) * exp( - sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]],
-                                  - phi.grad.est^2 * exp( - sqrt(5) * phi.grad.est * dist.s0[,i]) * (1  +   sqrt(5) * phi.grad.est*dist.s0[,i]  -  5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
+                                  - phi.grad.est^2 * exp( - sqrt(5) * phi.grad.est * dist.s0[,i]) * (1  +   sqrt(5) * phi.grad.est * dist.s0[,i]  -  5 * phi.grad.est^2 * delta.s0[[i]][,1]^2),
                                  5 * phi.grad.est^4 * exp( - sqrt(5) * phi.grad.est * dist.s0[,i]) * delta.s0[[i]][,1] * delta.s0[[i]][,2],
                                   - phi.grad.est^2 * exp( - sqrt(5) * phi.grad.est * dist.s0[,i]) * (1  +   sqrt(5) * phi.grad.est * dist.s0[,i]  -  5 * phi.grad.est^2 * delta.s0[[i]][,2]^2))/3
             V.0 = adiag(5/3 * phi.grad.est^2 * I.d,

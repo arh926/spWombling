@@ -76,6 +76,7 @@ bayes_cwomb <- function(coords = NULL,
             tgamma.cov <- t(apply(coords,1,function(xy){
               sj <- xy
               grad.li <- sapply(rule.uv*tval[i], function(x) Gamma.1.m1(x,u=u,s0=s0,sj=sj,phi.est=phi.est))
+              sum(grad.li[-len])*(tval[i]/len)
             }))
             
             ###################################################
@@ -600,7 +601,7 @@ K.11.m1 <- function(t,u, phi.est){
   t.1 <- sqrt(3)*phi.est*sqrt(sum((delta.t2.t1)^2))
   
   k11 <- t.0*exp(-t.1)*(1-sqrt(3)*phi.est*delta.t2.t1[1]^2/sqrt(sum((delta.t2.t1)^2)))
-  k22 <- t.0*exp(-t.1)*(1-sqrt(3)*phi.est*delta.t2.t1[1]^2/sqrt(sum((delta.t2.t1)^2)))
+  k22 <- t.0*exp(-t.1)*(1-sqrt(3)*phi.est*delta.t2.t1[2]^2/sqrt(sum((delta.t2.t1)^2)))
   k12 <- -sqrt(3)*phi.est*t.0*exp(-t.1)*delta.t2.t1[1]*delta.t2.t1[2]/sqrt(sum((delta.t2.t1)^2))
   (k11*u.perp[1]^2+2*k12*u.perp[1]*u.perp[2]+k22*u.perp[2]^2)
 }

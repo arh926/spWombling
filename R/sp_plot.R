@@ -9,6 +9,9 @@
 sp_ggplot <- function(data_frame = NULL, 
                       sp = FALSE,
                       shape = NULL,
+                      legend.key.height = 0.7,#1.5,
+                      legend.key.width = 0.4,#0.6,
+                      text.size = 10, #20,
                       palette = "Spectral"){
   
   if(sp & is.null(shape)) stop("Please provide a shape file!")
@@ -83,9 +86,9 @@ sp_ggplot <- function(data_frame = NULL,
       theme(axis.line = element_line(linewidth = 0.2),
             axis.title = element_text(size = 15),
             axis.text = element_text(size = 10),
-            legend.key.height = unit(1.5, "cm"),
-            legend.key.width = unit(0.6, "cm"),
-            legend.text = element_text(size = 20),
+            legend.key.height = unit(legend.key.height, "cm"),
+            legend.key.width = unit(legend.key.width, "cm"),
+            legend.text = element_text(size = text.size),
             plot.margin = unit(rep(0.15, 4), "cm"))
   }
  
