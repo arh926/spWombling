@@ -13,7 +13,6 @@
 #' @importFrom coda is.mcmc
 #' @importFrom coda HPDinterval
 #' @export
-#' @examples 
 ##################################################################
 ### Hierarchical Bayesian spatial model: point referenced data ###
 ##################################################################

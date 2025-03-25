@@ -1,25 +1,18 @@
 #' Gradient and Curvature Assessment
 #'
-#' performs gradient and curvature assessment on the estimated surface from a hierarchcial Bayesian spatial model. Parameters not listed are optional
+#' performs gradient and curvature assessment on the estimated surface from a hierarchical Bayesian spatial model. Parameters not listed are optional
 #'
 #' @param coords coordinates for observed process (order \eqn{L} x \eqn{2})
 #' @param model the posterior samples from the MCMC fit
 #' @param cov.type covariance type (three available choices: Gaussian,  Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})
 #' @param grid.points coordinates for grid over observed process (order \eqn{n_G} x \eqn{2})
 #' @param nbatch number of batches
-#' @param return.mcmc if true returns mcmc samples of gardients
+#' @param return.mcmc if true returns MCMC samples of gradients
 #' @import stats
 #' @importFrom coda as.mcmc
 #' @importFrom coda HPDinterval
-#' @importFrom MASS mvrnorm
-#' @importFrom Matrix Matrix
-#' @importFrom Matrix forceSymmetric
 #' @import parallel doParallel magic
-#' @keywords 
 #' @export
-#' @examples
-
-
 spatial_gradient = function(coords = NULL,
                              model = NULL,
                              cov.type = c("matern1", "matern2", "gaussian",),

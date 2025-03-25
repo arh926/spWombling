@@ -18,7 +18,7 @@
 #' @param digits rounding digits
 #' @param cov.type covariance type (three available choices: Gaussian, Mat\'ern(\eqn{\nu=3/2})), Mat\'ern(\eqn{\nu=5/2})
 #' @keywords spWombling
-#' @import stats Matrix
+#' @import stats 
 #' @importFrom MASS mvrnorm 
 #' @export
 ###################################
@@ -236,7 +236,6 @@ hlmBayes_sp <- function(y = NULL,
         -(a.tau + 1) * log(tau2) - b.tau/tau2 - 
         sum(log(diag(chol.Sigma)))/4 - t(y) %*% inv.Sigma %*% y/2
     }
-    
     
     ############@@@@@@@@@@@@@@@##############
     # Adaptive Scaling of Proposal Variance #

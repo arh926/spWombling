@@ -16,11 +16,7 @@
 #' @importFrom coda is.mcmc
 #' @importFrom coda HPDinterval
 #' @importFrom MASS mvrnorm
-#' @importFrom Matrix Matrix
-#' @keywords 
 #' @export
-#' @examples
-
 ######################################################################
 ### Bayesian Wombling for Curves effected in parallel for segments ###
 ######################################################################

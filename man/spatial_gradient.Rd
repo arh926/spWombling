@@ -24,8 +24,8 @@ spatial_gradient(
 
 \item{nbatch}{number of batches}
 
-\item{return.mcmc}{if true returns mcmc samples of gardients}
+\item{return.mcmc}{if true returns MCMC samples of gradients}
 }
 \description{
-performs gradient and curvature assessment on the estimated surface from a hierarchcial Bayesian spatial model. Parameters not listed are optional
+performs gradient and curvature assessment on the estimated surface from a hierarchical Bayesian spatial model. Parameters not listed are optional
 }
